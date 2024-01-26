@@ -3,12 +3,53 @@ lightweight but versatile python-framework for multi-stage information processin
 
 ## design/(prevision) usage samples
 
+### concept
+
+```
+Pipeline(
+    Stage(
+        requires: None
+        primer: lambda in_, **kwargs: "key" in in_
+        action: ...
+        message: lambda primer, **kwargs: "missing key" if primer else ""
+        status: lambda primer, **kwargs: 0 if primer else 1
+    ),
+    Stage(
+        requires: {Previous: 0}
+        primer: lambda in_, **kwargs: isinstance(in_["key"], list)
+        action: ...
+        message: ...
+        status: ...
+    ),
+    ...,
+    Stage(
+        requires: {Previous: 0}
+        primer: lambda in_, **kwargs: <last stage for valid input>
+        action: lambda in_, out, **kwargs: out.update({"key": in_["key]})
+        message: ...
+        status: lambda primer, **kwargs: 2 if primer else 1  # exit by using status=2
+    ),
+    Stage(  # default value
+        requires: {First: 1}
+        primer: ...
+        action: lambda out, **kwargs: out.update({"key": <default value>})
+        message: ...
+        status: ...
+    ),
+    exit_on_status=2,
+    loop=False,
+    ...
+)
+```
+
+
 ### classes
 ```
 class Stage:
     process: Callable[[PipelineData], PipelineData]
     response: Callable[[PipelineData], int]
     requires: dict[Stage, int]  # Stage->uuid4
+    uuid4: 
     ...
 class Fitting:
     ...
@@ -17,11 +58,13 @@ class Pipeline:
 class Pipearray:
     ...
 class PipelineData:
-    stages: dict[Stage, int]  # Stage->uuid4
-    data: Any
-    in: Any
+    stages: list[tuple[str, int]]  # Stage->uuid4
+    out: Any
+    body: Any
+    in_: Any
     ...
 ```
+
 
 ### assemble at once
 ```
@@ -56,7 +99,7 @@ segment_a = Pipeline(...)
 segment_b = Pipeline(...)
 ...
 pipeline = Pipeline(
-    segment_a, segment_b, ...,
+    *segment_a, *segment_b, ...,
 )
 ```
 
