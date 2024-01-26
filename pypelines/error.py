@@ -1,0 +1,5 @@
+"""
+# pypelines/error.py
+
+...
+"""
