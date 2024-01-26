@@ -25,14 +25,14 @@ Pipeline(
     Stage(
         requires: {Previous: 0}
         primer: lambda in_, **kwargs: <last stage for valid input>
-        action: lambda in_, out, **kwargs: out.update({"key": in_["key]})
+        action: lambda in_, data, **kwargs: data.update({"key": in_["key]})
         message: ...
         status: lambda primer, **kwargs: 2 if primer else 1  # exit by using status=2
     ),
     Stage(  # default value
         requires: {First: 1}
         primer: ...
-        action: lambda out, **kwargs: out.update({"key": <default value>})
+        action: lambda data, **kwargs: data.update({"key": <default value>})
         message: ...
         status: ...
     ),
@@ -57,11 +57,10 @@ class Pipeline:
     ...
 class Pipearray:
     ...
-class PipelineData:
+class PipelineOutput:
     stages: list[tuple[str, int]]  # Stage->uuid4
-    out: Any
-    body: Any
-    in_: Any
+    request: dict[str, Any]  # kwargs of pipeline.run
+    data: Any
     ...
 ```
 
@@ -128,19 +127,19 @@ pipeline = Pipeline(
 )
 ```
 
-### trigger
+### trigger/run
 ```
 pipeline = Pipeline(...)
-result = pipeline.trigger(data)
-result2 = pipeline.trigger(data2)
+result = pipeline.run(data)
+result2 = pipeline.run(data2)
 ```
 
 ### chain
 ```
 pipeline1 = Pipeline(...)
 pipeline2 = Pipeline(...)
-result = pipeline1.trigger(pipeline2.trigger(data))
-result2 = Pipeline(pipeline1, pipeline2, ...).trigger(data)
+result = pipeline1.run(pipeline2.run(data))
+result2 = Pipeline(pipeline1, pipeline2, ...).run(data)
 # result == result2
 ```
 
