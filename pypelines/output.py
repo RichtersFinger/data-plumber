@@ -11,5 +11,5 @@ from dataclasses import dataclass
 @dataclass
 class PipelineOutput:
     stages: list[tuple[str, int]]
-    request: dict[str, Any]
+    kwargs: dict[str, Any]
     data: Any

@@ -60,7 +60,7 @@ class Pipearray:
     ...
 class PipelineOutput:
     stages: list[tuple[str, int]]  # Stage->uuid4
-    request: dict[str, Any]  # kwargs of pipeline.run
+    kwargs: dict[str, Any]  # kwargs of pipeline.run
     data: Any
     ...
 ```

@@ -51,6 +51,52 @@ def test_pipeline_run_minimal_two_stage():
 
 
 # #############################
+# ### PipelineOutput
+
+def test_pipeline_output_minimal():
+    """Test properties of class `PipelineOutput` for minimal setup."""
+
+    output = Pipeline(
+        Stage(
+            action=lambda out, **kwargs: out.update({"test": 0}),
+            status=lambda **kwargs: 0,
+            message=lambda **kwargs: "stage 1"
+        ),
+    ).run(input="input")
+
+    assert hasattr(output, "stages")
+    assert hasattr(output, "kwargs")
+    assert hasattr(output, "data")
+
+    assert isinstance(output.stages, list)
+    assert len(output.stages) == 1
+    assert output.stages[0] == ("stage 1", 0)
+    assert isinstance(output.data, dict)
+    assert output.data == {"test": 0}
+    assert isinstance(output.kwargs, dict)
+    assert output.kwargs == {"input": "input"}
+
+
+def test_pipeline_output_two_stage():
+    """Test properties of class `PipelineOutput` for two-`Stage` setup."""
+
+    output = Pipeline(
+        Stage(
+            status=lambda **kwargs: 0,
+            message=lambda **kwargs: "stage 1"
+        ),
+        Stage(
+            status=lambda **kwargs: 1,
+            message=lambda **kwargs: "stage 2"
+        ),
+    ).run()
+
+    assert len(output.stages) == 2
+    assert output.stages[0] == ("stage 1", 0)
+    assert output.stages[1] == ("stage 2", 1)
+
+
+# #############################
 # ### Pipeline.initialize_output
 
 def test_pipeline_run_initialize_output():
@@ -94,7 +140,24 @@ def test_pipeline_run_exit_on_status():
 
 
 # #############################
-# ### stage.requires
+# ### Stage.primer
+
+def test_stage_primer_minimal():
+    """Test property `primer` of class `Stage` for minimal setup."""
+
+    output = Pipeline(
+        Stage(
+            primer=lambda **kwargs: "primer",
+            action=lambda out, primer, **kwargs: out.update({"test": primer})
+        ),
+    ).run()
+
+    assert "test" in output.data
+    assert output.data["test"] == "primer"
+
+
+# #############################
+# ### Stage.requires
 
 @pytest.mark.parametrize(
     ("status1", "status2", "out"),
