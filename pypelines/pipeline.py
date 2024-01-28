@@ -9,6 +9,10 @@ from .stage import Stage
 from .output import PipelineOutput
 
 
+class PipelineContext:
+    ...
+
+
 class Pipeline:
     def __init__(
         self,
