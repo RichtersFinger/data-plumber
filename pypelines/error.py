@@ -3,3 +3,7 @@
 
 ...
 """
+
+
+class PipelineError(Exception):
+    pass

@@ -11,7 +11,7 @@ pytest -v -s --cov=pypelines.array \
 """
 
 import pytest
-from pypelines import Pipeline, Stage, Previous, First, Fork
+from pypelines import Pipeline, Stage, Previous, First, Fork, PipelineError
 
 
 # #############################
@@ -326,6 +326,21 @@ def test_pipeline_named_stages_execution_order():
     assert output.data == ["a", "b", "a"]
 
 
+def test_pipeline_named_stages_exception():
+    """
+    Test exception-behavior in method `run` of class `Pipeline` for
+    named `Stage`s.
+    """
+
+    with pytest.raises(PipelineError) as exc_info:
+        Pipeline(
+            "a", "b",
+            a=Stage(),
+        ).run()
+
+    assert isinstance(exc_info, PipelineError)
+
+
 # #############################
 # ### Pipeline.named stages
 
@@ -399,3 +414,20 @@ def test_pipeline_fork_exit():
     assert len(output.stages) == 1
     assert output.data["test"] == 1
 
+
+def test_fork_exception():
+    """
+    Test exception-behavior in method `run` of class `Pipeline` when
+    using `Fork`s.
+    """
+
+    with pytest.raises(PipelineError) as exc_info:
+        Pipeline(
+            "a", "f",
+            a=Stage(),
+            f=Fork(
+                lambda **kwargs: "b"
+            ),
+        ).run()
+
+    assert isinstance(exc_info, PipelineError)
