@@ -17,7 +17,7 @@ Example usage
 from typing import Optional, Callable, Any
 import abc
 from uuid import uuid4
-from .pipeline import PipelineContext
+from .context import PipelineContext
 
 
 class Stage:

@@ -5,12 +5,8 @@
 """
 
 from typing import Optional, Callable, Any, Iterator
-from .stage import Stage
 from .output import PipelineOutput
-
-
-class PipelineContext:
-    ...
+from .stage import Stage
 
 
 class Pipeline:

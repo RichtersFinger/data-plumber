@@ -3,6 +3,7 @@ Test suite for pypelines.
 
 Run with
 pytest -v -s --cov=pypelines.array \
+    --cov=pypelines.context \
     --cov=pypelines.error \
     --cov=pypelines.fork \
     --cov=pypelines.pipeline \
