@@ -140,6 +140,25 @@ def test_pipeline_run_exit_on_status():
 
 
 # #############################
+# ### Pipeline.len
+
+def test_pipeline_len():
+    """
+    Test `Pipeline`-property `exit_on_status` with method `run`.
+    """
+
+    pipeline = Pipeline(
+        Stage(),
+    )
+
+    assert len(pipeline) == 1
+
+    pipeline.append(Stage())
+
+    assert len(pipeline) == 2
+
+
+# #############################
 # ### Pipeline/Stage.addition
 
 def test_stage_addition():
