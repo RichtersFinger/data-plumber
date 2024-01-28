@@ -221,3 +221,43 @@ def test_pipeline_run_stage_requires_callable(status, out):
     ).run()
 
     assert output.data == out
+
+
+# #############################
+# ### Pipeline.named stages
+
+def test_pipeline_named_stages_minimal():
+    """
+    Test method `run` of class `Pipeline` for minimal setup of named
+    `Stage`s.
+    """
+
+    output = Pipeline(
+        "a",
+        a=Stage(
+            action=lambda out, **kwargs: out.update({"test": 0})
+        ),
+    ).run()
+
+    assert "test" in output.data
+    assert output.data["test"] == 0
+
+
+def test_pipeline_named_stages_execution_order():
+    """
+    Test execution order for method `run` of class `Pipeline` for named
+    `Stage`s.
+    """
+
+    output = Pipeline(
+        "a", "b", "a",
+        a=Stage(
+            action=lambda out, **kwargs: out.append["a"]
+        ),
+        b=Stage(
+            action=lambda out, **kwargs: out.append["b"]
+        ),
+        initialize_output=lambda: [],
+    ).run()
+
+    assert output.data == ["a", "b", "a"]
