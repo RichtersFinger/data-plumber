@@ -14,22 +14,25 @@ import pytest
 from pypelines import Pipeline, Stage
 
 
+# #############################
+# ### Pipeline.run
+
 def test_pipeline_minimal():
-    """Test method `trigger` of class `Pipeline` for minimal setup."""
+    """Test method `run` of class `Pipeline` for minimal setup."""
 
     output = Pipeline(
         Stage(
             action=lambda out, **kwargs: out.update({"test": 0})
         ),
-    ).trigger()
+    ).run()
 
     assert "test" in output.data
     assert output.data["test"] == 0
 
 
-def test_pipeline_minimal_two_stage():
+def test_pipeline_run_minimal_two_stage():
     """
-    Test method `trigger` of class `Pipeline` for minimal two-stage setup.
+    Test method `run` of class `Pipeline` for minimal two-stage setup.
     """
 
     output = Pipeline(
@@ -39,7 +42,7 @@ def test_pipeline_minimal_two_stage():
         Stage(
             action=lambda out, **kwargs: out.update({"stage2": 0})
         ),
-    ).trigger()
+    ).run()
 
     assert "stage1" in output.data
     assert output.data["stage1"] == 0
@@ -47,9 +50,9 @@ def test_pipeline_minimal_two_stage():
     assert output.data["stage2"] == 0
 
 
-def test_pipeline_exit_on_status():
+def test_pipeline_run_exit_on_status():
     """
-    Test `Pipeline`-property `exit_on_status` with method `trigger` of
+    Test `Pipeline`-property `exit_on_status` with method `run` of
     class `Pipeline`.
     """
 
@@ -62,7 +65,7 @@ def test_pipeline_exit_on_status():
             action=lambda out, **kwargs: out.update({"stage2": 0})
         ),
         exit_on_status=1
-    ).trigger()
+    ).run()
 
     assert "stage1" in output.data
     assert output.data["stage1"] == 0
@@ -77,7 +80,7 @@ def test_pipeline_exit_on_status():
     ],
     ids=["requirements_met", "requirements_not_met"]
 )
-def test_stage_requires(status, out):
+def test_pipeline_run_stage_requires_previous(status, out):
     """
     Test `requires`-property of `Stage`.
     """
@@ -91,6 +94,6 @@ def test_stage_requires(status, out):
             requires={Previous: 0},
             action=lambda out, **kwargs: out.update({"stage2": 0})
         ),
-    ).trigger()
+    ).run()
 
     assert output.data == out
