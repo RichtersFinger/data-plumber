@@ -140,6 +140,57 @@ def test_pipeline_run_exit_on_status():
 
 
 # #############################
+# ### Pipeline/Stage.addition
+
+def test_stage_addition():
+    """Test method `__add__` for class `Stage`."""
+
+    stage_a = Stage(
+        action=lambda out, **kwargs: out.update({"stage_a": 0})
+    )
+    stage_b = Stage(
+        action=lambda out, **kwargs: out.update({"stage_b": 0})
+    )
+    pipeline = stage_a + stage_b
+
+    assert isinstance(pipeline, Pipeline)
+
+    output = pipeline.run()
+
+    assert output.data == {"stage_a": 0, "stage_b": 0}
+
+
+def test_stage_pipeline_addition_multiple():
+    """Test method `__add__` for classes `Pipeline` and `Stage`."""
+
+    stage_a = Stage(
+        action=lambda out, **kwargs: out.update({"stage_a": 0})
+    )
+    stage_b = Stage(
+        action=lambda out, **kwargs: out.update({"stage_b": 0})
+    )
+    stage_c = Stage(
+        action=lambda out, **kwargs: out.update({"stage_c": 0})
+    )
+    pipeline_a = (stage_a + stage_b) + stage_c
+    pipeline_b = stage_a + (stage_b + stage_c)
+    pipeline_c = (stage_a + stage_a) + (stage_b + stage_b)
+
+    assert isinstance(pipeline_a, Pipeline)
+    assert isinstance(pipeline_b, Pipeline)
+    assert isinstance(pipeline_c, Pipeline)
+
+    output_a = pipeline_a.run()
+    output_b = pipeline_b.run()
+    output_c = pipeline_c.run()
+
+    assert output_a.data == {"stage_a": 0, "stage_b": 0, "stage_c": 0}
+    assert output_b.data == {"stage_a": 0, "stage_b": 0, "stage_c": 0}
+    assert output_c.data == {"stage_a": 0, "stage_b": 0}
+    assert len(output_c.stages) == 4
+
+
+# #############################
 # ### Stage.primer
 
 def test_stage_primer_minimal():
