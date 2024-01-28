@@ -153,9 +153,127 @@ def test_pipeline_len():
 
     assert len(pipeline) == 1
 
-    pipeline.append(Stage())
+    pipeline = Pipeline(
+        Stage(),
+        Stage(),
+    )
 
     assert len(pipeline) == 2
+
+
+# #############################
+# ### Pipeline extension with Stages
+
+def _pipeline_extension_input():
+    return [
+        (
+            Stage(
+                action=lambda out, **kwargs: out.append(1)
+            ),
+        ),
+        (
+            Pipeline(
+                Stage(
+                    action=lambda out, **kwargs: out.append(1)
+                ),
+            ),
+        )
+    ]
+
+
+@pytest.mark.parametrize(
+    ("stage_or_pipeline"),
+    _pipeline_extension_input(),
+    ids=["Stage", "Pipeline"]
+)
+def test_pipeline_append(stage_or_pipeline):
+    """
+    Test method `append` of `Pipeline` with `Stage` or `Pipeline`.
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, **kwargs: out.append(0)
+        ),
+        initialize_output=lambda: []
+    )
+
+    assert len(pipeline) == 1
+
+    pipeline.append(
+        stage_or_pipeline
+    )
+
+    assert len(pipeline) == 2
+
+    output = pipeline.run()
+
+    assert output.data == [0, 1]
+
+
+@pytest.mark.parametrize(
+    ("stage_or_pipeline"),
+    _pipeline_extension_input(),
+    ids=["Stage", "Pipeline"]
+)
+def test_pipeline_prepend(stage_or_pipeline):
+    """
+    Test method `prepend` of `Pipeline` with `Stage` or `Pipeline`.
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, **kwargs: out.append(0)
+        ),
+        initialize_output=lambda: []
+    )
+
+    assert len(pipeline) == 1
+
+    pipeline.prepend(
+        stage_or_pipeline
+    )
+
+    assert len(pipeline) == 2
+
+    output = pipeline.run()
+
+    assert output.data == [1, 0]
+
+
+@pytest.mark.parametrize(
+    ("stage_or_pipeline"),
+    _pipeline_extension_input(),
+    ids=["Stage", "Pipeline"]
+)
+def test_pipeline_insert(stage_or_pipeline):
+    """
+    Test method `insert` of `Pipeline` with `Stage` or `Pipeline`.
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, **kwargs: out.append(0)
+        ),
+        initialize_output=lambda: []
+    )
+
+    assert len(pipeline) == 1
+
+    pipeline.insert(
+        0,
+        stage_or_pipeline
+    )
+    pipeline.insert(
+        2,
+        stage_or_pipeline
+    )
+
+    assert len(pipeline) == 3
+
+    output = pipeline.run()
+
+    assert output.data == [1, 0, 1]
 
 
 # #############################

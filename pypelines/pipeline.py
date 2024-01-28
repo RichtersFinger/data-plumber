@@ -20,3 +20,12 @@ class Pipeline:
 
     def run(self, **kwargs) -> PipelineOutput:
         return PipelineOutput(None, None, None)
+
+    def append(self, _) -> None:
+        ...
+
+    def prepend(self, _) -> None:
+        ...
+
+    def insert(self, index: int, _) -> None:
+        ...
