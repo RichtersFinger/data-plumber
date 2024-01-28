@@ -13,6 +13,7 @@ pytest -v -s --cov=pypelines.array \
 import pytest
 from pypelines \
     import Pipeline, Stage, Previous, First, Fork, PipelineError, Pipearray
+from pypelines.output import PipelineOutput
 
 
 # #############################
@@ -646,3 +647,74 @@ def test_fork_exception():
 # #############################
 # ### Pipearray
 
+def test_pipearray_run_positional():
+    """Test method `run` of `Pipearray` with positional `Pipelines`."""
+
+    pipeline_a = Pipeline(
+        Stage(status=lambda **kwargs: 0)
+    )
+    pipeline_b = Pipeline(
+        Stage(status=lambda **kwargs: 1)
+    )
+
+    output = Pipearray(pipeline_a, pipeline_b).run()
+
+    assert isinstance(output, list)
+    assert len(output) == 2
+    for _output in output:
+        assert isinstance(_output, PipelineOutput)
+    assert output[0].stages[0][1] == 0
+    assert output[1].stages[0][1] == 1
+
+
+def test_pipearray_run_keyword():
+    """Test method `run` of `Pipearray` with keyword arg `Pipelines`."""
+
+    pipeline_a = Pipeline(
+        Stage(status=lambda **kwargs: 0)
+    )
+    pipeline_b = Pipeline(
+        Stage(status=lambda **kwargs: 1)
+    )
+
+    output = Pipearray(
+        a=pipeline_a,
+        b=pipeline_b
+    ).run()
+
+    assert isinstance(output, dict)
+    assert len(output) == 2
+    assert "a" in output
+    assert "b" in output
+    for _output in output.values():
+        assert isinstance(_output, PipelineOutput)
+    assert output["a"].stages[0][1] == 0
+    assert output["b"].stages[0][1] == 1
+
+
+def test_pipearray_run_mixed():
+    """
+    Test method `run` of `Pipearray` with mixed positional and keyword
+    args `Pipelines`.
+    """
+
+    pipeline_a = Pipeline(
+        Stage(status=lambda **kwargs: 0)
+    )
+    pipeline_b = Pipeline(
+        Stage(status=lambda **kwargs: 1)
+    )
+
+    output = Pipearray(
+        pipeline_a,
+        b=pipeline_b
+    ).run()
+
+    assert isinstance(output, dict)
+    assert len(output) == 2
+    assert pipeline_a.id in output
+    assert "b" in output
+    for _output in output.values():
+        assert isinstance(_output, PipelineOutput)
+    assert output[pipeline_a.id].stages[0][1] == 0
+    assert output["b"].stages[0][1] == 1

@@ -19,6 +19,10 @@ class Pipeline:
         **kwargs
     ) -> None: ...
 
+    @property
+    def id(self) -> str:
+        ...
+
     def run(self, **kwargs) -> PipelineOutput:
         return PipelineOutput(None, None, None)
 

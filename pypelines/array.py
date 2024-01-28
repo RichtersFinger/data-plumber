@@ -20,4 +20,4 @@ class Pipearray:
         self,
         **kwargs
     ) -> list[PipelineOutput] | dict[str, PipelineOutput]:
-        ...
+        return [PipelineOutput(None, None, None)]
