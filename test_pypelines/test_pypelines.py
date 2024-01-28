@@ -277,6 +277,27 @@ def test_pipeline_insert(stage_or_pipeline):
 
 
 # #############################
+# ### Pipeline unpacking
+
+def test_pipeline_unpacking():
+    """Test method `__iter__` for class `Pipeline`."""
+
+    stage_a = Stage()
+    stage_b = Stage()
+
+    pipeline = Pipeline(stage_a, stage_b)
+
+    pipeline2 = Pipeline(*pipeline)
+
+    assert len(pipeline2) == 2
+
+    x, y = pipeline
+
+    assert x == stage_a
+    assert y == stage_b
+
+
+# #############################
 # ### Pipeline/Stage.addition
 
 def test_stage_addition():

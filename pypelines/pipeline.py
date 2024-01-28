@@ -4,7 +4,8 @@
 ...
 """
 
-from typing import Optional, Callable, Any
+from typing import Optional, Callable, Any, Iterator
+from .stage import Stage
 from .output import PipelineOutput
 
 
@@ -28,4 +29,7 @@ class Pipeline:
         ...
 
     def insert(self, index: int, _) -> None:
+        ...
+
+    def __iter__(self) -> Iterator[Stage]:
         ...
