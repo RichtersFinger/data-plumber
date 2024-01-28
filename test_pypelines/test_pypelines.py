@@ -51,12 +51,32 @@ def test_pipeline_run_minimal_two_stage():
 
 
 # #############################
+# ### Pipeline.initialize_output
+
+def test_pipeline_run_initialize_output():
+    """
+    Test `Pipeline`-property `initialize_output` with method `run`.
+    """
+
+    output = Pipeline(
+        Stage(
+            action=lambda out, **kwargs: out.append(0),
+            status=lambda **kwargs: 0
+        ),
+        initialize_output=lambda: []
+    ).run()
+
+    assert isinstance(output.data, list)
+    assert len(output.data) == 1
+    assert output.data[0] == 0
+
+
+# #############################
 # ### Pipeline.exit_on_status
 
 def test_pipeline_run_exit_on_status():
     """
-    Test `Pipeline`-property `exit_on_status` with method `run` of
-    class `Pipeline`.
+    Test `Pipeline`-property `exit_on_status` with method `run`.
     """
 
     output = Pipeline(
