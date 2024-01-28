@@ -52,7 +52,7 @@ class Stage:
     requires: dict[Stage, int]  # Stage->uuid4
     uuid4: 
     ...
-class Fitting:
+class Fork:
     ...
 class Pipeline:
     ...
@@ -103,28 +103,28 @@ pipeline = Pipeline(
 )
 ```
 
-### control flow/fittings
+### control flow/forks
 conditional
 ```
 stage_a = Stage(...)
 stage_b = Stage(...)
 stage_c = Stage(...)
-fitting = Fitting(stage_b, stage_c)
+fork = Fork(stage_b, stage_c)
 ..
 pipeline = Pipeline(
-    stage_a, fitting,
+    stage_a, fork,
 )
 ```
-loop/jump? (requires named stages/segments)
+loops
 ```
 stage_a = Stage(...)
 stage_b = Stage(...)
 stage_c = Stage(...)
-bypass = Fitting("b")
+fork = Fork("b")
 ..
 pipeline = Pipeline(
-    "a", "b", "c", "l",
-    a=stage_a, b=stage_b, c=stage_c, l=bypass
+    "a", "b", "c", "f",
+    a=stage_a, b=stage_b, c=stage_c, f=fork
 )
 ```
 

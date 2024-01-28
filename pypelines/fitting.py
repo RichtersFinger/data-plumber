@@ -1,5 +1,0 @@
-"""
-# pypelines/fitting.py
-
-...
-"""

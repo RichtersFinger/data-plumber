@@ -19,4 +19,4 @@ class Pipeline:
     ) -> None: ...
 
     def run(self, **kwargs) -> PipelineOutput:
-        return PipelineOutput()
+        return PipelineOutput(None, None, None)

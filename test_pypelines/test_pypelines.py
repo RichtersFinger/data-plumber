@@ -4,14 +4,14 @@ Test suite for pypelines.
 Run with
 pytest -v -s --cov=pypelines.array \
     --cov=pypelines.error \
-    --cov=pypelines.fitting \
+    --cov=pypelines.fork \
     --cov=pypelines.pipeline \
     --cov=pypelines.response \
     --cov=pypelines.stage
 """
 
 import pytest
-from pypelines import Pipeline, Stage, Previous, First
+from pypelines import Pipeline, Stage, Previous, First, Fork
 
 
 # #############################
@@ -348,3 +348,54 @@ def test_pipeline_loop_minimal():
     assert "test" in output.data
     assert output.data["test"] == 3
     assert len(output.stages) == 3
+
+
+# #############################
+# ### Fork
+
+def test_pipeline_fork_minimal():
+    """
+    Test class `Fork` with method `run` of class `Pipeline` for
+    minimal setup.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(
+            action=lambda out, **kwargs: out.update({"test": out["test"] + 1}),
+        ),
+        b=Stage(
+            action=lambda out, **kwargs: out.update({"test": 0}),
+        ),
+        f=Fork(
+            lambda out, **kwargs: "a" if out["test"] < 3 else "b"
+        ),
+        initialize_output=lambda: {"test": 0},
+    ).run()
+
+    assert len(output.stages) == 4
+    assert output.data["test"] == 0
+
+
+def test_pipeline_fork_exit():
+    """
+    Test exit via `Fork` with method `run` of class `Pipeline` for
+    minimal setup.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(
+            action=lambda out, **kwargs: out.update({"test": 1}),
+        ),
+        b=Stage(
+            action=lambda out, **kwargs: out.update({"test": 0}),
+        ),
+        f=Fork(
+            lambda **kwargs: None
+        ),
+    ).run()
+
+    assert len(output.stages) == 1
+    assert output.data["test"] == 1
+
