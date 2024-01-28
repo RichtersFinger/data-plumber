@@ -4,6 +4,12 @@
 ...
 """
 
+from typing import Any
+from dataclasses import dataclass
 
+
+@dataclass
 class PipelineOutput:
-    pass
+    stages: list[tuple[str, int]]
+    request: dict[str, Any]
+    data: Any

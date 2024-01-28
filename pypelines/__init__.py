@@ -1,5 +1,7 @@
-from .output import PipelineOutput
 from .pipeline import Pipeline
-from .stage import Stage
+from .stage import Previous, First, Stage
 
-__all__ = ["PipelineOutput", "Pipeline", "Stage"]
+__all__ = [
+    "Pipeline",
+    "Previous", "First", "Stage",
+]

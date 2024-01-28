@@ -23,16 +23,16 @@ Pipeline(
     ),
     ...,
     Stage(
-        requires: {Previous: 0}
+        requires: {Previous: (lambda status: status != 1)}
         primer: lambda in_, **kwargs: <last stage for valid input>
-        action: lambda in_, data, **kwargs: data.update({"key": in_["key]})
+        action: lambda in_, out, **kwargs: out.update({"key": in_["key]})
         message: ...
         status: lambda primer, **kwargs: 2 if primer else 1  # exit by using status=2
     ),
     Stage(  # default value
         requires: {First: 1}
         primer: ...
-        action: lambda data, **kwargs: data.update({"key": <default value>})
+        action: lambda out, **kwargs: out.update({"key": <default value>})
         message: ...
         status: ...
     ),
