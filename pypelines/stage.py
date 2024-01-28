@@ -110,8 +110,8 @@ class StageRef(metaclass=abc.ABCMeta):
     intended for explicit use.
     """
 
-    @abc.abstractmethod
     @staticmethod
+    @abc.abstractmethod
     def get(context: PipelineContext):
         """Returns the `Stage` that is to be executed next."""
         raise NotImplementedError("Missing definition of StageRef.get.")
