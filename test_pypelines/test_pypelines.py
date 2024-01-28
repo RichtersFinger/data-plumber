@@ -261,3 +261,27 @@ def test_pipeline_named_stages_execution_order():
     ).run()
 
     assert output.data == ["a", "b", "a"]
+
+
+# #############################
+# ### Pipeline.named stages
+
+def test_pipeline_loop_minimal():
+    """
+    Test property `loop` with method `run` of class `Pipeline` for
+    minimal setup.
+    """
+
+    output = Pipeline(
+        Stage(
+            action=lambda out, **kwargs: out.update({"test": out["test"] + 1}),
+            status=lambda out, **kwargs: 0 if out["test"] < 3 else 1,
+        ),
+        initialize_output=lambda: {"test": 0},
+        exit_on_status=1,
+        loop=True,
+    ).run()
+
+    assert "test" in output.data
+    assert output.data["test"] == 3
+    assert len(output.stages) == 3
