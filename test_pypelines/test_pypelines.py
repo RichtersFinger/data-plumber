@@ -11,7 +11,8 @@ pytest -v -s --cov=pypelines.array \
 """
 
 import pytest
-from pypelines import Pipeline, Stage, Previous, First, Fork, PipelineError
+from pypelines \
+    import Pipeline, Stage, Previous, First, Fork, PipelineError, Pipearray
 
 
 # #############################
@@ -640,3 +641,8 @@ def test_fork_exception():
         ).run()
 
     assert isinstance(exc_info, PipelineError)
+
+
+# #############################
+# ### Pipearray
+

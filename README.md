@@ -150,3 +150,5 @@ pipeline1 = Pipeline(...)
 pipeline2 = Pipeline(...)
 pipearray = Pipearray(pipeline1, pipeline2)
 ```
+(either purely positional > list of outputs
+at least one kwarg > dict of outputs (those without kwarg get uuid4))
