@@ -34,11 +34,13 @@ class Stage:
     Keyword arguments:
     requires -- requirements for `Stage`-execution; dictionary with keys
                 being either `None`, a `StageRef`, or `str` (identifier
-                of a `Stage` in the context of a `Pipeline`) and values
-                being either an integer (required output status of the
-                keyed `Stage`) or a `Callable` taking the status as an
-                argument and returning a `bool` (if it evaluates to
-                `True`, the `Stage`-requirement is met)
+                of a `Stage` in the context of a `Pipeline` (most recent
+                evaluation; requirement not met if `Stage` has not yet
+                been executed)) and values being either an integer
+                (required output status of the keyed `Stage`) or a
+                `Callable` taking the status as an argument and
+                returning a `bool` (if it evaluates to `True`, the
+                `Stage`-requirement is met)
     primer -- `Callable` for pre-processing data
               (kwargs: `in_`, `out`, `count`)
               (default `lambda **kwargs: None`)
@@ -72,7 +74,7 @@ class Stage:
 
     @property
     def id(self) -> str:
-        """Returns a `Stage`'s id."""
+        """Returns a `Stage`'s `id`."""
         return self._id
 
     @property
@@ -101,6 +103,9 @@ class Stage:
     def message(self) -> Callable[..., int]:
         """Returns a `Stage`'s `message` callable."""
         return self._message
+
+    def __str__(self):
+        return self._id
 
 
 class StageRef(metaclass=abc.ABCMeta):
