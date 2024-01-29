@@ -169,18 +169,14 @@ def test_pipeline_len():
 
 def _pipeline_extension_input():
     return [
-        (
+        Stage(
+            action=lambda out, **kwargs: out.append(1)
+        ),
+        Pipeline(
             Stage(
                 action=lambda out, **kwargs: out.append(1)
             ),
         ),
-        (
-            Pipeline(
-                Stage(
-                    action=lambda out, **kwargs: out.append(1)
-                ),
-            ),
-        )
     ]
 
 
@@ -527,10 +523,10 @@ def test_pipeline_named_stages_execution_order():
     output = Pipeline(
         "a", "b", "a",
         a=Stage(
-            action=lambda out, **kwargs: out.append["a"]
+            action=lambda out, **kwargs: out.append("a")
         ),
         b=Stage(
-            action=lambda out, **kwargs: out.append["b"]
+            action=lambda out, **kwargs: out.append("b")
         ),
         initialize_output=lambda: [],
     ).run()
