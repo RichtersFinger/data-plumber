@@ -16,6 +16,7 @@ Example usage
 
 from typing import Optional, Callable, Any
 from uuid import uuid4
+from .context import StageRef
 
 
 class Stage:
@@ -56,7 +57,7 @@ class Stage:
     def __init__(
         self,
         requires: Optional[
-            dict["Optional[StageRef | str]", "int | Callable[[int], bool]"]
+            dict[StageRef | str, int | Callable[[int], bool]]
         ] = None,
         primer: Callable[..., Any] = lambda **kwargs: None,
         action: Callable[..., Any] = lambda **kwargs: None,
@@ -77,7 +78,7 @@ class Stage:
 
     @property
     def requires(self) -> Optional[
-        dict["Optional[StageRef | str]", "int | Callable[[int], bool]"]
+        dict[StageRef | str, int | Callable[[int], bool]]
     ]:
         """Returns a `Stage`'s requirements."""
         return self._requires
@@ -98,7 +99,7 @@ class Stage:
         return self._status
 
     @property
-    def message(self) -> Callable[..., int]:
+    def message(self) -> Callable[..., str]:
         """Returns a `Stage`'s `message` callable."""
         return self._message
 

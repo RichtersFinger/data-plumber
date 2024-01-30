@@ -27,7 +27,7 @@ class Pipearray:
         **kwargs: Pipeline
     ) -> None:
         if kwargs:  # labeled Pipearray
-            self._pipelines = {}
+            self._pipelines: dict[str, Pipeline] | list[Pipeline] = {}
             self._pipelines.update(kwargs)
             self._pipelines.update({p.id: p for p in args})
         else:  # anonymous Pipearray

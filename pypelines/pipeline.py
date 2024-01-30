@@ -49,7 +49,7 @@ class Pipeline:
         self._id = str(uuid4())
 
         # dictionary of Stages by Stage.id
-        self._stage_catalog = {}
+        self._stage_catalog: dict[str, Stage | Fork] = {}
         self._update_catalog(*args, **kwargs)
 
         # build actual pipeline with references to Stages|Forks
@@ -69,7 +69,7 @@ class Pipeline:
         return self._id
 
     @property
-    def catalog(self) -> dict[str, Stage]:
+    def catalog(self) -> dict[str, Stage | Fork]:
         """Returns a (shallow) copy of the `Pipeline`'s `Stage`-catalog."""
         return self._stage_catalog.copy()
 
@@ -118,7 +118,7 @@ class Pipeline:
                     try:
                         fork_target = fork_target.get(
                             PipelineContext(stages, kwargs, data, stage_count)
-                        )[0]
+                        )[0]  # type: ignore[index]
                     except TypeError as exc:
                         raise PipelineError(
                             f"Unable to resolve fork's StageRef '{str(fork_target)}' at stage #{str(stage_count)}. "
@@ -144,7 +144,7 @@ class Pipeline:
                         match = next(
                             (stage for _, stage in enumerate(reversed(stages))
                                 if stage[0] == ref),
-                            default=None
+                            None
                         )
                     else:  # by StageRef
                         match = ref.get(
@@ -157,7 +157,7 @@ class Pipeline:
                             + f" '{_s}') has not been executed yet."
                         )
                     if callable(req):
-                        if not req(status=match[2]):
+                        if not req(status=match[2]):  # type: ignore[call-arg]
                             # requirement not met
                             req_met = False
                             break
@@ -247,7 +247,7 @@ class Pipeline:
         self.append(other)
         return self
 
-    def __iter__(self) -> Iterator[Stage]:
+    def __iter__(self) -> Iterator[Stage | Fork]:
         for s in self._pipeline:
             yield self._stage_catalog[s]
 
