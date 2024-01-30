@@ -6,6 +6,9 @@
 
 from typing import Optional, Callable, Any, Iterator
 from uuid import uuid4
+
+from .context import StageOut, PipelineContext
+from .error import PipelineError
 from .output import PipelineOutput
 from .fork import Fork
 from .stage import Stage
@@ -84,8 +87,8 @@ class Pipeline:
                   dictionary `in_`
         """
 
-        stages = []
-        data = self._initialize_output()
+        stages: list[StageOut] = []  # record of results
+        data = self._initialize_output()  # output data
 
         stage_count = -1
         index = 0
@@ -107,9 +110,41 @@ class Pipeline:
                 continue
             # ##########
             # Stage
-            stage_count = stage_count + 1
             # requires
-            # TODO: ...
+            if s.requires is not None:
+                req_met = True
+                for ref, req in s.requires.items():
+                    match = None
+                    if isinstance(ref, str):  # by identifier
+                        # find latest status of Stage with this identifier
+                        match = next(
+                            (stage for _, stage in enumerate(reversed(stages))
+                                if stage[0] == ref),
+                            default=None
+                        )
+                    else:  # by StageRef
+                        match = ref.get(PipelineContext(stages))
+                    if match is None:
+                        # this Stage has not been executed
+                        raise PipelineError(
+                            f"Referenced Stage '{str(ref)}' (required by Stage"
+                            + f" '{_s}') has not been executed yet."
+                        )
+                    if callable(req):
+                        if not req(status=match[2]):
+                            # requirement not met
+                            req_met = False
+                            break
+                    else:
+                        if match[2] != req:
+                            # requirement not met
+                            req_met = False
+                            break
+                if not req_met:
+                    index = index + 1
+                    continue
+            # all requirements met
+            stage_count = stage_count + 1
             # primer
             primer = s.primer(in_=kwargs, out=data, count=stage_count)
             # action
@@ -133,12 +168,16 @@ class Pipeline:
                 count=stage_count,
                 status=status
             )
-            stages.append((msg, status))
+            stages.append((_s, msg, status))
             if status == self._exit_on_status:
                 break
             index = index + 1
 
-        return PipelineOutput(stages, kwargs, data)
+        return PipelineOutput(
+            list(map(lambda x: x[1:], stages)),
+            kwargs,
+            data
+        )
 
     def append(self, element: "str | Stage | Fork | Pipeline") -> None:
         """Append `element` to the `Pipeline`."""
