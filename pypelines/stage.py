@@ -102,5 +102,18 @@ class Stage:
         """Returns a `Stage`'s `message` callable."""
         return self._message
 
+    def __add__(self, other):
+        # import here to prevent circular import
+        from .pipeline import Pipeline
+        if not isinstance(other, Stage) and not isinstance(other, Pipeline):
+            raise TypeError(
+                "Incompatible type, expected 'Stage' or 'Pipeline' "
+                    f"not '{type(other).__name__}'."
+            )
+        if isinstance(other, Stage):
+            return Pipeline(self, other)
+        other.prepend(self)
+        return other
+
     def __str__(self):
         return self._id

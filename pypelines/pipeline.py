@@ -238,6 +238,15 @@ class Pipeline:
         self._update_catalog(element)
         self._pipeline.insert(index, str(element))
 
+    def __add__(self, other):
+        if not isinstance(other, Stage) and not isinstance(other, Pipeline):
+            raise TypeError(
+                "Incompatible type, expected 'Stage' or 'Pipeline' "
+                    f"not '{type(other).__name__}'."
+            )
+        self.append(other)
+        return self
+
     def __iter__(self) -> Iterator[Stage]:
         for s in self._pipeline:
             yield self._stage_catalog[s]
