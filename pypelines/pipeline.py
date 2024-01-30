@@ -7,7 +7,7 @@
 from typing import Optional, Callable, Any, Iterator
 from uuid import uuid4
 
-from .context import StageOut, PipelineContext
+from .context import StageOut, PipelineContext, StageRef
 from .error import PipelineError
 from .output import PipelineOutput
 from .fork import Fork
@@ -99,14 +99,38 @@ class Pipeline:
                 break
 
             _s = self._pipeline[index]
-            s = self._stage_catalog[_s]
+            try:
+                s = self._stage_catalog[_s]
+            except KeyError as exc:
+                raise PipelineError(
+                    f"Unable to resolve reference to Stage '{_s}' at stage #{str(stage_count)}. "
+                    + f"Records until error: {', '.join(map(str, stages))}"
+                ) from exc
             if isinstance(s, Fork):
                 # ##########
                 # Fork
-                fork = s.eval(in_=kwargs, out=data, count=stage_count)
-                if fork is None:  # exit pipeline on request
+                fork_target = s.eval(
+                    PipelineContext(stages, kwargs, data, stage_count)
+                )
+                if fork_target is None:  # exit pipeline on request
                     break
-                index = self._pipeline.index(fork)
+                if isinstance(fork_target, StageRef):  # get id via StageRef.get
+                    try:
+                        fork_target = fork_target.get(
+                            PipelineContext(stages, kwargs, data, stage_count)
+                        )[0]
+                    except TypeError as exc:
+                        raise PipelineError(
+                            f"Unable to resolve fork's StageRef '{str(fork_target)}' at stage #{str(stage_count)}. "
+                            + f"Records until error: {', '.join(map(str, stages))}"
+                        ) from exc
+                try:
+                    index = self._pipeline.index(fork_target)
+                except ValueError as exc:
+                    raise PipelineError(
+                        f"Unable to resolve reference to '{str(fork_target)}' at stage #{str(stage_count)}. "
+                        + f"Records until error: {', '.join(map(str, stages))}"
+                    ) from exc
                 continue
             # ##########
             # Stage
@@ -123,7 +147,9 @@ class Pipeline:
                             default=None
                         )
                     else:  # by StageRef
-                        match = ref.get(PipelineContext(stages))
+                        match = ref.get(
+                            PipelineContext(stages, kwargs, data, stage_count)
+                        )
                     if match is None:
                         # this Stage has not been executed
                         raise PipelineError(
