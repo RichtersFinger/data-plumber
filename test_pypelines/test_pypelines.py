@@ -540,13 +540,11 @@ def test_pipeline_named_stages_exception():
     named `Stage`s.
     """
 
-    with pytest.raises(PipelineError) as exc_info:
+    with pytest.raises(PipelineError):
         Pipeline(
             "a", "b",
             a=Stage(),
         ).run()
-
-    assert isinstance(exc_info, PipelineError)
 
 
 # #############################
@@ -629,7 +627,7 @@ def test_fork_exception():
     using `Fork`s.
     """
 
-    with pytest.raises(PipelineError) as exc_info:
+    with pytest.raises(PipelineError):
         Pipeline(
             "a", "f",
             a=Stage(),
@@ -637,8 +635,6 @@ def test_fork_exception():
                 lambda **kwargs: "b"
             ),
         ).run()
-
-    assert isinstance(exc_info, PipelineError)
 
 
 # #############################
