@@ -65,6 +65,16 @@ class Pipeline:
         """Returns a `Pipeline`'s `id`."""
         return self._id
 
+    @property
+    def catalog(self) -> dict[str, Stage]:
+        """Returns a (shallow) copy of the `Pipeline`'s `Stage`-catalog."""
+        return self._stage_catalog.copy()
+
+    @property
+    def stages(self) -> list[str]:
+        """Returns a copy of the `Pipeline`'s list of `Stage`s."""
+        return self._pipeline.copy()
+
     def run(self, **kwargs) -> PipelineOutput:
         """
         Trigger `Pipeline` execution.
@@ -130,18 +140,36 @@ class Pipeline:
 
         return PipelineOutput(stages, kwargs, data)
 
-    def append(self, element: str | Stage | Fork) -> None:
+    def append(self, element: "str | Stage | Fork | Pipeline") -> None:
         """Append `element` to the `Pipeline`."""
+        if isinstance(element, Pipeline):
+            self._update_catalog(**element.catalog)
+            self._pipeline = self._pipeline + element.stages
+            return
         self._update_catalog(element)
         self._pipeline.append(str(element))
 
-    def prepend(self, element: str | Stage | Fork) -> None:
+    def prepend(self, element: "str | Stage | Fork | Pipeline") -> None:
         """Prepend `element` to the `Pipeline`."""
+        if isinstance(element, Pipeline):
+            self._update_catalog(**element.catalog)
+            self._pipeline = element.stages + self._pipeline
+            return
         self._update_catalog(element)
         self._pipeline.insert(0, str(element))
 
-    def insert(self, index: int, element: str | Stage | Fork) -> None:
+    def insert(
+        self,
+        index: int,
+        element: "str | Stage | Fork | Pipeline"
+    ) -> None:
         """Insert `element` into the `Pipeline` at `index`."""
+        if isinstance(element, Pipeline):
+            self._update_catalog(**element.catalog)
+            self._pipeline = self._pipeline[:index] \
+                + element.stages \
+                + self._pipeline[index:]
+            return
         self._update_catalog(element)
         self._pipeline.insert(index, str(element))
 
