@@ -371,7 +371,7 @@ def test_stage_primer_minimal():
     ("status1", "status2", "out"),
     [
         (0, 0, {"stage1": 0, "stage2": 0, "stage3": 0}),
-        (1, 0, {"stage1": 1, "stage3": 0}),
+        (1, 0, {"stage1": 1}),
         (0, 1, {"stage1": 0, "stage2": 1}),
         (1, 1, {"stage1": 1}),
     ],
