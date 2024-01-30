@@ -63,6 +63,37 @@ class Pipeline:
                 continue
             self._stage_catalog.update({str(s): s})
 
+    def _meets_requirements(self, _s: str, context: PipelineContext) -> bool:
+        s = self._stage_catalog[_s]
+        for ref, req in s.requires.items():
+            match = None
+            if isinstance(ref, str):  # by identifier
+                # find latest status of Stage with this identifier
+                match = next(
+                    (stage for _, stage in enumerate(reversed(context.stages))
+                        if stage[0] == ref),
+                    None
+                )
+            else:  # by StageRef
+                match = ref.get(
+                    context
+                )
+            if match is None:
+                # this Stage has not been executed
+                raise PipelineError(
+                    f"Referenced Stage '{str(ref)}' (required by Stage"
+                    + f" '{_s}') has not been executed yet."
+                )
+            if callable(req):
+                if not req(status=match[2]):  # type: ignore[call-arg]
+                    # requirement not met
+                    return False
+            else:
+                if match[2] != req:
+                    # requirement not met
+                    return False
+        return True
+
     @property
     def id(self) -> str:
         """Returns a `Pipeline`'s `id`."""
@@ -136,37 +167,9 @@ class Pipeline:
             # Stage
             # requires
             if s.requires is not None:
-                req_met = True
-                for ref, req in s.requires.items():
-                    match = None
-                    if isinstance(ref, str):  # by identifier
-                        # find latest status of Stage with this identifier
-                        match = next(
-                            (stage for _, stage in enumerate(reversed(stages))
-                                if stage[0] == ref),
-                            None
-                        )
-                    else:  # by StageRef
-                        match = ref.get(
-                            PipelineContext(stages, kwargs, data, stage_count)
-                        )
-                    if match is None:
-                        # this Stage has not been executed
-                        raise PipelineError(
-                            f"Referenced Stage '{str(ref)}' (required by Stage"
-                            + f" '{_s}') has not been executed yet."
-                        )
-                    if callable(req):
-                        if not req(status=match[2]):  # type: ignore[call-arg]
-                            # requirement not met
-                            req_met = False
-                            break
-                    else:
-                        if match[2] != req:
-                            # requirement not met
-                            req_met = False
-                            break
-                if not req_met:
+                if not self._meets_requirements(
+                    _s, PipelineContext(stages, kwargs, data, stage_count)
+                ):
                     index = index + 1
                     continue
             # all requirements met
