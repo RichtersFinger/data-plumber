@@ -17,7 +17,7 @@ Example usage
 from typing import Optional, Callable, Any
 import abc
 from uuid import uuid4
-from .context import PipelineContext
+from .context import StageOut, PipelineContext
 
 
 class Stage:
@@ -117,7 +117,7 @@ class StageRef(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def get(context: PipelineContext):
+    def get(context: PipelineContext) -> StageOut:
         """Returns the `Stage` that is to be executed next."""
         raise NotImplementedError("Missing definition of StageRef.get.")
 
@@ -125,6 +125,20 @@ class StageRef(metaclass=abc.ABCMeta):
 class Previous(StageRef):
     """Reference to the previous `Stage` during `Pipeline` execution."""
 
+    @staticmethod
+    def get(context: PipelineContext) -> StageOut:
+        try:
+            return context.stages[-1]
+        except IndexError:
+            return None
+
 
 class First(StageRef):
     """Reference to the first `Stage` during `Pipeline` execution."""
+
+    @staticmethod
+    def get(context: PipelineContext) -> StageOut:
+        try:
+            return context.stages[0]
+        except IndexError:
+            return None
