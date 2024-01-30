@@ -15,9 +15,7 @@ Example usage
 """
 
 from typing import Optional, Callable, Any
-import abc
 from uuid import uuid4
-from .context import StageOut, PipelineContext
 
 
 class Stage:
@@ -106,39 +104,3 @@ class Stage:
 
     def __str__(self):
         return self._id
-
-
-class StageRef(metaclass=abc.ABCMeta):
-    """
-    Base class enabling the definition of references to certain `Stage`s
-    when executing a `Pipeline`. Only child-classes of this class are
-    intended for explicit use.
-    """
-
-    @staticmethod
-    @abc.abstractmethod
-    def get(context: PipelineContext) -> StageOut:
-        """Returns the `Stage` that is to be executed next."""
-        raise NotImplementedError("Missing definition of StageRef.get.")
-
-
-class Previous(StageRef):
-    """Reference to the previous `Stage` during `Pipeline` execution."""
-
-    @staticmethod
-    def get(context: PipelineContext) -> StageOut:
-        try:
-            return context.stages[-1]
-        except IndexError:
-            return None
-
-
-class First(StageRef):
-    """Reference to the first `Stage` during `Pipeline` execution."""
-
-    @staticmethod
-    def get(context: PipelineContext) -> StageOut:
-        try:
-            return context.stages[0]
-        except IndexError:
-            return None
