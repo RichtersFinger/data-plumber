@@ -26,7 +26,7 @@ setup(
     project_urls={
         "Source": "https://github.com/RichtersFinger/pypelines"
     },
-    python_requires=">=3.9, <4",
+    python_requires=">=3.10, <4",
     install_requires=requirements,
     packages=[
         "pypelines",
