@@ -8,7 +8,7 @@ from typing import TypeAlias, Any, Optional
 import abc
 from dataclasses import dataclass
 
-StageOut: TypeAlias = tuple[str, str, int]
+StageRecord: TypeAlias = tuple[str, str, int]
 
 
 @dataclass
@@ -18,7 +18,7 @@ class PipelineContext:
     `stage.StageRef` classes.
     """
 
-    stages: list[StageOut]
+    stages: list[StageRecord]
     kwargs: dict[str, Any]
     out: Any
     count: int
@@ -33,7 +33,7 @@ class StageRef(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def get(context: PipelineContext) -> Optional[StageOut]:
+    def get(context: PipelineContext) -> Optional[StageRecord]:
         """
         Returns the `Stage` that is to be executed next. If this
         reference cannot be resolved within the given context, the value
@@ -49,7 +49,7 @@ class Previous(StageRef):
     """Reference to the previous `Stage` during `Pipeline` execution."""
 
     @staticmethod
-    def get(context: PipelineContext) -> Optional[StageOut]:
+    def get(context: PipelineContext) -> Optional[StageRecord]:
         try:
             return context.stages[-1]
         except IndexError:
@@ -60,7 +60,7 @@ class First(StageRef):
     """Reference to the first `Stage` during `Pipeline` execution."""
 
     @staticmethod
-    def get(context: PipelineContext) -> Optional[StageOut]:
+    def get(context: PipelineContext) -> Optional[StageRecord]:
         try:
             return context.stages[0]
         except IndexError:

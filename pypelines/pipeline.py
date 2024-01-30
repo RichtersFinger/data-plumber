@@ -7,7 +7,7 @@
 from typing import Optional, Callable, Any, Iterator
 from uuid import uuid4
 
-from .context import StageOut, PipelineContext, StageRef
+from .context import StageRecord, PipelineContext, StageRef
 from .error import PipelineError
 from .output import PipelineOutput
 from .fork import Fork
@@ -87,7 +87,7 @@ class Pipeline:
                   dictionary `in_`
         """
 
-        stages: list[StageOut] = []  # record of results
+        stages: list[StageRecord] = []  # record of results
         data = self._initialize_output()  # output data
 
         stage_count = -1
@@ -200,7 +200,7 @@ class Pipeline:
             index = index + 1
 
         return PipelineOutput(
-            list(map(lambda x: x[1:], stages)),
+            list(map(lambda x: x[1:], stages)),  # trim StageRecord
             kwargs,
             data
         )
