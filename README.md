@@ -1,154 +1,42 @@
 # pypelines
-lightweight but versatile python-framework for multi-stage information processing
+`pypelines` is a lightweight but versatile python-framework for multi-stage
+information processing. It allows to construct processing pipelines from both
+atomic building blocks and via recombination of existing pipelines. Forks
+enable more complex (i.e. non-linear) orders of execution. Pipelines can also
+be collected into arrays that can be executed at once with the same input
+data.
 
-## design/(prevision) usage samples
-
-### concept
-
+## Minimal usage example
+Consider a scenario where the contents of a dictionary have to be validated
+and a suitable error message has to be generated. Specifically, a valid input-
+dictionary is expected to have a key "list" with the respective value being
+a list of integer numbers. A suitable pipeline might look like this
 ```
-Pipeline(
-    Stage(
-        requires: None
-        primer: lambda in_, **kwargs: "key" in in_
-        action: ...
-        message: lambda primer, **kwargs: "missing key" if primer else ""
-        status: lambda primer, **kwargs: 0 if primer else 1
-    ),
-    Stage(
-        requires: {Previous: 0}
-        primer: lambda in_, **kwargs: isinstance(in_["key"], list)
-        action: ...
-        message: ...
-        status: ...
-    ),
-    ...,
-    Stage(
-        requires: {Previous: (lambda status: status != 1)}
-        primer: lambda in_, **kwargs: <last stage for valid input>
-        action: lambda in_, out, **kwargs: out.update({"key": in_["key]})
-        message: ...
-        status: lambda primer, **kwargs: 2 if primer else 1  # exit by using status=2
-    ),
-    Stage(  # default value
-        requires: {First: 1}
-        primer: ...
-        action: lambda out, **kwargs: out.update({"key": <default value>})
-        message: ...
-        status: ...
-    ),
-    initialize_output=lambda: {},
-    exit_on_status=2,
-    loop=False,
-    ...
-)
+>>> from pypelines import Stage, Pipeline, Previous
+>>> pipeline = Pipeline(
+        Stage(
+            primer=lambda in_, **kwargs: "list" in in_,
+            status=lambda primer, **kwargs: 0 if primer else 1,
+            message=lambda primer, **kwargs: "" if primer else "missing key"
+        ),
+        Stage(
+            requires={Previous: 0},
+            primer=lambda in_, **kwargs: isinstance(in_["list"], list),
+            status=lambda primer, **kwargs: 0 if primer else 1,
+            message=lambda primer, **kwargs: "" if primer else "bad type"
+        ),
+        Stage(
+            requires={Previous: 0},
+            primer=lambda in_, **kwargs: all(isinstance(i, int) for i in in_["list"]),
+            status=lambda primer, **kwargs: 0 if primer else 1,
+            message=lambda primer, **kwargs: "validation success" if primer else "bad type in list"
+        ),
+        exit_on_status=1
+    )
+>>> pipeline.run(**{}).stages
+[('missing key', 1)]
+>>> pipeline.run(**{"list": 1}).stages
+[('', 0), ('bad type', 1)]
+>>> pipeline.run(**{"list": [1, 2, 3]}).stages
+[('', 0), ('', 0), ('validation success', 0)]
 ```
-
-
-### classes
-```
-class Stage:
-    process: Callable[[PipelineData], PipelineData]
-    response: Callable[[PipelineData], int]
-    requires: dict[Stage, int]  # Stage->uuid4
-    uuid4: 
-    ...
-class Fork:
-    ...
-class Pipeline:
-    ...
-class Pipearray:
-    ...
-class PipelineOutput:
-    stages: list[tuple[str, int]]  # Stage->uuid4
-    kwargs: dict[str, Any]  # kwargs of pipeline.run
-    data: Any
-    ...
-```
-
-
-### assemble at once
-```
-stage_a = Stage(...)
-...
-pipeline = Pipeline(
-    stage_a, stage_b, stage_c, ...
-)
-```
-
-### assemble piece-wise
-```
-stage_a = Stage(...)
-...
-pipeline = Pipeline(
-    stage_b, ...
-)
-pipeline.prepend(stage_a)
-pipeline.append(stage_c)
-```
-
-### concat?
-```
-stage_a = Stage(...)
-...
-pipeline = stage_a + stage_b + ...  # type: Pipeline
-```
-
-### re-usable segments
-```
-segment_a = Pipeline(...)
-segment_b = Pipeline(...)
-...
-pipeline = Pipeline(
-    *segment_a, *segment_b, ...,
-)
-```
-
-### control flow/forks
-conditional
-```
-stage_a = Stage(...)
-stage_b = Stage(...)
-stage_c = Stage(...)
-fork = Fork(stage_b, stage_c)
-..
-pipeline = Pipeline(
-    stage_a, fork,
-)
-```
-loops
-```
-stage_a = Stage(...)
-stage_b = Stage(...)
-stage_c = Stage(...)
-fork = Fork("b")
-..
-pipeline = Pipeline(
-    "a", "b", "c", "f",
-    a=stage_a, b=stage_b, c=stage_c, f=fork
-)
-```
-
-### trigger/run
-```
-pipeline = Pipeline(...)
-result = pipeline.run(data)
-result2 = pipeline.run(data2)
-```
-
-### chain
-```
-pipeline1 = Pipeline(...)
-pipeline2 = Pipeline(...)
-result = pipeline1.run(pipeline2.run(data))
-result2 = Pipeline(pipeline1, pipeline2, ...).run(data)
-# result == result2
-```
-
-### vectorize (threaded)
-```
-pipeline1 = Pipeline(...)
-pipeline2 = Pipeline(...)
-pipearray = Pipearray(pipeline1, pipeline2)
-```
-(either purely positional > list of outputs
-at least one kwarg > dict of outputs (those without kwarg get uuid4))
