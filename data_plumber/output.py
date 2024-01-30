@@ -1,5 +1,5 @@
 """
-# pypelines/output.py
+# data_plumber/output.py
 
 ...
 """

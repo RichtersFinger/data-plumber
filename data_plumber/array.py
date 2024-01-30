@@ -1,5 +1,5 @@
 """
-# pypelines/array.py
+# data_plumber/array.py
 
 ...
 """

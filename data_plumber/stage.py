@@ -1,5 +1,5 @@
 """
-# pypelines/stage.py
+# data_plumber/stage.py
 
 This module defines the `Stage` as well as `StageRef` classes. While the
 former constitute the individual logical units of a `Pipeline` the
@@ -9,9 +9,9 @@ requirement evaluation logic only has meaning in the context of a
 `Pipeline`.
 
 Example usage
-  >>> from pypelines import Stage, Previous
+  >>> from data_plumber import Stage, Previous
   >>> Stage(requires={Previous: 0}, status=lambda in_, **kwargs: int("data" in in_))
-  <pypelines.stage.Stage object at ...>
+  <data_plumber.stage.Stage object at ...>
 """
 
 from typing import Optional, Callable, Any

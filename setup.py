@@ -14,7 +14,7 @@ requirements = \
 
 setup(
     version="0.1.0",
-    name="pypelines",
+    name="data-plumber",
     description="lightweight but versatile python-framework for multi-stage information processing",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -22,13 +22,13 @@ setup(
     author_email="srichters@uni-muenster.de",
     license="MIT",
     license_files=("LICENSE",),
-    url="https://pypi.org/project/pypelines/",
+    url="https://pypi.org/project/data-plumber/",
     project_urls={
-        "Source": "https://github.com/RichtersFinger/pypelines"
+        "Source": "https://github.com/RichtersFinger/data-plumber"
     },
     python_requires=">=3.10, <4",
     install_requires=requirements,
     packages=[
-        "pypelines",
+        "data_plumber",
     ],
 )

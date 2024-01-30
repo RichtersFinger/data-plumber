@@ -1,5 +1,5 @@
 """
-# pypelines/error.py
+# data_plumber/error.py
 
 ...
 """

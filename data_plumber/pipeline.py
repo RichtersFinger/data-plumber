@@ -1,5 +1,5 @@
 """
-# pypelines/pipeline.py
+# data_plumber/pipeline.py
 
 ...
 """
@@ -16,7 +16,7 @@ from .stage import Stage
 
 class Pipeline:
     """
-    A `Pipeline` provides the core-functionality of the pypelines-
+    A `Pipeline` provides the core-functionality of the `data-plumber`-
     framework. `Pipeline`s can be defined either with (explicitly) named
     `Stage`s or immediately by providing `Stage`s as positional
     arguments.

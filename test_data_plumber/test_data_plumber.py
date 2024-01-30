@@ -1,20 +1,20 @@
 """
-Test suite for pypelines.
+Test suite for data-plumber.
 
 Run with
-pytest -v -s --cov=pypelines.array \
-    --cov=pypelines.context \
-    --cov=pypelines.error \
-    --cov=pypelines.fork \
-    --cov=pypelines.pipeline \
-    --cov=pypelines.response \
-    --cov=pypelines.stage
+pytest -v -s --cov=data_plumber.array \
+    --cov=data_plumber.context \
+    --cov=data_plumber.error \
+    --cov=data_plumber.fork \
+    --cov=data_plumber.output \
+    --cov=data_plumber.pipeline \
+    --cov=data_plumber.stage
 """
 
 import pytest
-from pypelines \
+from data_plumber \
     import Pipeline, Stage, Previous, First, Fork, PipelineError, Pipearray
-from pypelines.output import PipelineOutput
+from data_plumber.output import PipelineOutput
 
 
 # #############################
