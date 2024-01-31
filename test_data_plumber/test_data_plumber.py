@@ -15,6 +15,7 @@ import pytest
 from data_plumber \
     import Pipeline, Stage, Previous, First, Fork, PipelineError, Pipearray
 from data_plumber.output import PipelineOutput
+from data_plumber.context import StageRecord
 
 
 # #############################
@@ -107,13 +108,18 @@ def test_pipeline_output_minimal():
         ),
     ).run(input="input")
 
-    assert hasattr(output, "stages")
+    assert hasattr(output, "records")
     assert hasattr(output, "kwargs")
     assert hasattr(output, "data")
+    assert hasattr(output, "last_record")
+    assert hasattr(output, "last_message")
+    assert hasattr(output, "last_status")
 
-    assert isinstance(output.stages, list)
-    assert len(output.stages) == 1
-    assert output.stages[0] == ("stage 1", 0)
+    assert isinstance(output.records, list)
+    assert len(output.records) == 1
+    assert output.records[0] == ("stage 1", 0)
+    assert output.last_record == ("stage 1", 0)
+    assert (output.last_message, output.last_status) == ("stage 1", 0)
     assert isinstance(output.data, dict)
     assert output.data == {"test": 0}
     assert isinstance(output.kwargs, dict)
@@ -134,9 +140,9 @@ def test_pipeline_output_two_stage():
         ),
     ).run()
 
-    assert len(output.stages) == 2
-    assert output.stages[0] == ("stage 1", 0)
-    assert output.stages[1] == ("stage 2", 1)
+    assert len(output.records) == 2
+    assert output.records[0] == ("stage 1", 0)
+    assert output.records[1] == ("stage 2", 1)
 
 
 # #############################
@@ -384,7 +390,7 @@ def test_stage_pipeline_addition_multiple():
     assert output_a.data == {"stage_a": 0, "stage_b": 0, "stage_c": 0}
     assert output_b.data == {"stage_a": 0, "stage_b": 0, "stage_c": 0}
     assert output_c.data == {"stage_a": 0, "stage_b": 0}
-    assert len(output_c.stages) == 4
+    assert len(output_c.records) == 4
 
 
 # #############################
@@ -608,7 +614,7 @@ def test_pipeline_loop_minimal():
 
     assert "test" in output.data
     assert output.data["test"] == 3
-    assert len(output.stages) == 3
+    assert len(output.records) == 3
 
 
 # #############################
@@ -634,7 +640,7 @@ def test_pipeline_fork_minimal():
         initialize_output=lambda: {"test": 0},
     ).run()
 
-    assert len(output.stages) == 4
+    assert len(output.records) == 4
     assert output.data["test"] == 0
 
 
@@ -657,7 +663,7 @@ def test_pipeline_fork_exit():
         ),
     ).run()
 
-    assert len(output.stages) == 1
+    assert len(output.records) == 1
     assert output.data["test"] == 1
 
 
@@ -696,8 +702,8 @@ def test_pipearray_run_positional():
     assert len(output) == 2
     for _output in output:
         assert isinstance(_output, PipelineOutput)
-    assert output[0].stages[0][1] == 0
-    assert output[1].stages[0][1] == 1
+    assert output[0].records[0][1] == 0
+    assert output[1].records[0][1] == 1
 
 
 def test_pipearray_run_keyword():
@@ -721,8 +727,8 @@ def test_pipearray_run_keyword():
     assert "b" in output
     for _output in output.values():
         assert isinstance(_output, PipelineOutput)
-    assert output["a"].stages[0][1] == 0
-    assert output["b"].stages[0][1] == 1
+    assert output["a"].records[0][1] == 0
+    assert output["b"].records[0][1] == 1
 
 
 def test_pipearray_run_mixed():
@@ -749,5 +755,5 @@ def test_pipearray_run_mixed():
     assert "b" in output
     for _output in output.values():
         assert isinstance(_output, PipelineOutput)
-    assert output[pipeline_a.id].stages[0][1] == 0
-    assert output["b"].stages[0][1] == 1
+    assert output[pipeline_a.id].records[0][1] == 0
+    assert output["b"].records[0][1] == 1
