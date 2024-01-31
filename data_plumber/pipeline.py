@@ -81,7 +81,7 @@ class Pipeline:
 
     def _meets_requirements(self, _s: str, context: PipelineContext) -> bool:
         s = self._stage_catalog[_s]
-        for ref, req in s.requires.items():
+        for ref, req in s.requires.items():  # type: ignore[union-attr]
             match = None
             if isinstance(ref, str):  # by identifier
                 # find latest status of Stage with this identifier
