@@ -1,7 +1,8 @@
 """
 # data_plumber/pipeline.py
 
-...
+The `pipeline`-module defines the `Pipeline`-class as the core-component
+of the data-plumber-framework.
 """
 
 from typing import Optional, Callable, Any, Iterator
@@ -20,6 +21,21 @@ class Pipeline:
     framework. `Pipeline`s can be defined either with (explicitly) named
     `Stage`s or immediately by providing `Stage`s as positional
     arguments.
+
+    Example usage:
+     >>> from data_plumber import Pipeline, Stage, Fork
+     >>> Pipeline(
+             Stage(...),
+             Stage(...),
+             Fork(...)
+         )
+     <data_plumber.pipeline.Pipeline object at ...>
+     >>> Pipeline(
+             Stage(...),
+             Stage(...),
+             Fork(...)
+         ).run(...)
+     <data_plumber.output.PipelineOutput object at ...>
 
     Keyword arguments:
     args -- positional `Stage`s/`Fork`s referenced by id or explicit as

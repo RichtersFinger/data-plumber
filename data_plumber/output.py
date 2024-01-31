@@ -1,7 +1,8 @@
 """
 # data_plumber/output.py
 
-...
+This module defines the output-format `PipelineOutput` of a
+`Pipeline.run`.
 """
 
 from typing import Any

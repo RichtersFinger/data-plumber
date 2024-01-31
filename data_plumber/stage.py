@@ -1,21 +1,13 @@
 """
 # data_plumber/stage.py
 
-This module defines the `Stage` as well as `StageRef` classes. While the
-former constitute the individual logical units of a `Pipeline` the
-latter serve as references to specific `Stages` during the execution of
-a `Pipeline` (see examples for `Stage.requires`). Note that the
-requirement evaluation logic only has meaning in the context of a
-`Pipeline`.
-
-Example usage
-  >>> from data_plumber import Stage, Previous
-  >>> Stage(requires={Previous: 0}, status=lambda **kwargs: int("data" in kwargs))
-  <data_plumber.stage.Stage object at ...>
+This module defines the `Stage`-class, a single data-processing unit of
+a `Pipeline`.
 """
 
 from typing import Optional, Callable, Any
 from uuid import uuid4
+
 from .context import StageRef
 
 
@@ -33,6 +25,16 @@ class Stage:
     * `primer` (output of `Stage.primer`),
     * `status` (output of `Stage.status`),
     * `count` (index of `Stage` in execution of `Pipeline`)
+
+    Example usage:
+     >>> from data_plumber import Stage
+     >>> Stage(
+             primer=lambda **kwargs: "data" in kwargs,
+             status=lambda primer, **kwargs: int(primer),
+             message=lambda primer, **kwargs:
+                 "missing 'data'-argument" if not primer else ""
+         )
+     <data_plumber.stage.Stage object at ...>
 
     Keyword arguments:
     requires -- requirements for `Stage`-execution; dictionary with keys

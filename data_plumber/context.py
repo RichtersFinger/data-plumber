@@ -1,7 +1,8 @@
 """
 # data_plumber/context.py
 
-...
+This module defines classes for referencing and handling of flow-logic
+in a `Pipeline.run` (internal use).
 """
 
 from typing import TypeAlias, Any, Optional

@@ -1,11 +1,13 @@
 """
 # data_plumber/fork.py
 
-...
+This module defines the `Fork`-class which enables more complex flows
+in a `Pipeline.run`.
 """
 
 from typing import Callable, Optional
 from uuid import uuid4
+
 from .context import PipelineContext, StageRef
 
 
@@ -23,6 +25,13 @@ class Fork:
 
     A return value of `None` for the callable is treated as a request to
     exit the `Pipeline` execution.
+
+    Example usage:
+     >>> from data_plumber import Fork
+     >>> Fork(
+             lambda in_, **kwargs: None if "arg" in in_ else "stage-default"
+         )
+     <data_plumber.fork.Fork object at ...>
 
     Keyword arguments:
     fork -- callable that returns a reference to a `Stage`
