@@ -15,7 +15,6 @@ import pytest
 from data_plumber \
     import Pipeline, Stage, Previous, First, Fork, PipelineError, Pipearray
 from data_plumber.output import PipelineOutput
-from data_plumber.context import StageRecord
 
 
 # #############################
@@ -642,6 +641,24 @@ def test_pipeline_fork_minimal():
 
     assert len(output.records) == 4
     assert output.data["test"] == 0
+
+
+def test_pipeline_fork_kwargs():
+    """
+    Test class `Fork` with method `run` of class `Pipeline` for
+    passing through kwargs.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(),
+        b=Stage(),
+        f=Fork(
+            lambda fork_value, **kwargs: fork_value
+        ),
+    ).run(fork_value=None)
+
+    assert len(output.records) == 1
 
 
 def test_pipeline_fork_exit():
