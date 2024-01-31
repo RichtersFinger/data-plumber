@@ -13,7 +13,7 @@ requirements = \
         .split("\n")
 
 setup(
-    version="0.1.0",
+    version="1.0.0",
     name="data-plumber",
     description="lightweight but versatile python-framework for multi-stage information processing",
     long_description=long_description,
