@@ -1,7 +1,8 @@
 """
 # data_plumber/array.py
 
-...
+This module defines the `Pipearray`-class, a means to issue `Pipeline`-
+executions on identical input data with a single command.
 """
 
 from .pipeline import Pipeline
@@ -20,6 +21,19 @@ class Pipearray:
     instantiation or the `Pipeline`'s ids in cases where the keyword has
     been omitted), whereas in the opposite case a list of
     `PipelineOutput`s is returned.
+
+    Example usage:
+     >>> from data_plumber import Pipearray, Pipeline
+     >>> Pipearray(
+             validation_aspect_1=Pipeline(...),
+             validation_aspect_2=Pipeline(...)
+         )
+     <data_plumber.array.Pipearray object at ...>
+     >>> Pipearray(
+             validation_aspect_1=Pipeline(...),
+             validation_aspect_2=Pipeline(...)
+         ).run(...)
+     <dict[str, PipelineOutput]>
     """
     def __init__(
         self,

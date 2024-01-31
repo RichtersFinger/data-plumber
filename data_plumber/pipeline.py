@@ -1,13 +1,14 @@
 """
 # data_plumber/pipeline.py
 
-...
+The `pipeline`-module defines the `Pipeline`-class as the core-component
+of the data-plumber-framework.
 """
 
 from typing import Optional, Callable, Any, Iterator
 from uuid import uuid4
 
-from .context import StageRecord, PipelineContext, StageRef
+from .context import _StageRecord, PipelineContext, StageRef
 from .error import PipelineError
 from .output import PipelineOutput
 from .fork import Fork
@@ -20,6 +21,21 @@ class Pipeline:
     framework. `Pipeline`s can be defined either with (explicitly) named
     `Stage`s or immediately by providing `Stage`s as positional
     arguments.
+
+    Example usage:
+     >>> from data_plumber import Pipeline, Stage, Fork
+     >>> Pipeline(
+             Stage(...),
+             Stage(...),
+             Fork(...)
+         )
+     <data_plumber.pipeline.Pipeline object at ...>
+     >>> Pipeline(
+             Stage(...),
+             Stage(...),
+             Fork(...)
+         ).run(...)
+     <data_plumber.output.PipelineOutput object at ...>
 
     Keyword arguments:
     args -- positional `Stage`s/`Fork`s referenced by id or explicit as
@@ -65,7 +81,7 @@ class Pipeline:
 
     def _meets_requirements(self, _s: str, context: PipelineContext) -> bool:
         s = self._stage_catalog[_s]
-        for ref, req in s.requires.items():
+        for ref, req in s.requires.items():  # type: ignore[union-attr]
             match = None
             if isinstance(ref, str):  # by identifier
                 # find latest status of Stage with this identifier
@@ -114,11 +130,20 @@ class Pipeline:
         Trigger `Pipeline` execution.
 
         Keyword arguments:
-        kwargs -- keyword arguments that are passed into `Stage`s as
-                  dictionary `in_`
+        kwargs -- keyword arguments that are forwarded into `Stage`s
         """
 
-        stages: list[StageRecord] = []  # record of results
+        # check for reserved kwargs
+        if (bad_kwarg := next(
+            (p for p in kwargs if p in ["out", "primer", "status", "count"]),
+            None
+        )):
+            raise PipelineError(
+                f"Keyword '{bad_kwarg}' is reserved in the context of a "
+                + "'Pipeline.run'-command."
+            )
+
+        records: list[_StageRecord] = []  # record of results
         data = self._initialize_output()  # output data
 
         stage_count = -1
@@ -135,32 +160,32 @@ class Pipeline:
             except KeyError as exc:
                 raise PipelineError(
                     f"Unable to resolve reference to Stage '{_s}' at stage #{str(stage_count)}. "
-                    + f"Records until error: {', '.join(map(str, stages))}"
+                    + f"Records until error: {', '.join(map(str, records))}"
                 ) from exc
             if isinstance(s, Fork):
                 # ##########
                 # Fork
                 fork_target = s.eval(
-                    PipelineContext(stages, kwargs, data, stage_count)
+                    PipelineContext(records, kwargs, data, stage_count)
                 )
                 if fork_target is None:  # exit pipeline on request
                     break
                 if isinstance(fork_target, StageRef):  # get id via StageRef.get
                     try:
                         fork_target = fork_target.get(
-                            PipelineContext(stages, kwargs, data, stage_count)
+                            PipelineContext(records, kwargs, data, stage_count)
                         )[0]  # type: ignore[index]
                     except TypeError as exc:
                         raise PipelineError(
                             f"Unable to resolve fork's StageRef '{str(fork_target)}' at stage #{str(stage_count)}. "
-                            + f"Records until error: {', '.join(map(str, stages))}"
+                            + f"Records until error: {', '.join(map(str, records))}"
                         ) from exc
                 try:
                     index = self._pipeline.index(fork_target)
                 except ValueError as exc:
                     raise PipelineError(
                         f"Unable to resolve reference to '{str(fork_target)}' at stage #{str(stage_count)}. "
-                        + f"Records until error: {', '.join(map(str, stages))}"
+                        + f"Records until error: {', '.join(map(str, records))}"
                     ) from exc
                 continue
             # ##########
@@ -168,42 +193,42 @@ class Pipeline:
             # requires
             if s.requires is not None:
                 if not self._meets_requirements(
-                    _s, PipelineContext(stages, kwargs, data, stage_count)
+                    _s, PipelineContext(records, kwargs, data, stage_count)
                 ):
                     index = index + 1
                     continue
             # all requirements met
             stage_count = stage_count + 1
             # primer
-            primer = s.primer(in_=kwargs, out=data, count=stage_count)
+            primer = s.primer(**kwargs, out=data, count=stage_count)
             # action
             s.action(
-                in_=kwargs,
+                **kwargs,
                 out=data,
                 primer=primer,
                 count=stage_count
             )
             # status/message
             status = s.status(
-                in_=kwargs,
+                **kwargs,
                 out=data,
                 primer=primer,
                 count=stage_count
             )
             msg = s.message(
-                in_=kwargs,
+                **kwargs,
                 out=data,
                 primer=primer,
                 count=stage_count,
                 status=status
             )
-            stages.append((_s, msg, status))
+            records.append((_s, msg, status))
             if status == self._exit_on_status:
                 break
             index = index + 1
 
         return PipelineOutput(
-            list(map(lambda x: x[1:], stages)),  # trim StageRecord
+            list(map(lambda x: x[1:], records)),  # trim _StageRecord
             kwargs,
             data
         )

@@ -1,14 +1,18 @@
 """
 # data_plumber/context.py
 
-...
+This module defines classes for referencing and handling of flow-logic
+in a `Pipeline.run` (internal use).
 """
 
 from typing import TypeAlias, Any, Optional
 import abc
 from dataclasses import dataclass
 
-StageRecord: TypeAlias = tuple[str, str, int]
+_StageRecord: TypeAlias = tuple[str, str, int]
+"""Tuple of `Stage`-identifier and evaluated message and status."""
+StageRecord: TypeAlias = tuple[str, int]
+"""Tuple of message and status from a `Stage`'s-evaluation."""
 
 
 @dataclass
@@ -18,7 +22,7 @@ class PipelineContext:
     `stage.StageRef` classes.
     """
 
-    stages: list[StageRecord]
+    stages: list[_StageRecord]
     kwargs: dict[str, Any]
     out: Any
     count: int
@@ -33,7 +37,7 @@ class StageRef(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def get(context: PipelineContext) -> Optional[StageRecord]:
+    def get(context: PipelineContext) -> Optional[_StageRecord]:
         """
         Returns the `Stage` that is to be executed next. If this
         reference cannot be resolved within the given context, the value
@@ -49,7 +53,7 @@ class Previous(StageRef):
     """Reference to the previous `Stage` during `Pipeline` execution."""
 
     @staticmethod
-    def get(context: PipelineContext) -> Optional[StageRecord]:
+    def get(context: PipelineContext) -> Optional[_StageRecord]:
         try:
             return context.stages[-1]
         except IndexError:
@@ -60,7 +64,7 @@ class First(StageRef):
     """Reference to the first `Stage` during `Pipeline` execution."""
 
     @staticmethod
-    def get(context: PipelineContext) -> Optional[StageRecord]:
+    def get(context: PipelineContext) -> Optional[_StageRecord]:
         try:
             return context.stages[0]
         except IndexError:
