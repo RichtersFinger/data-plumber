@@ -7,9 +7,9 @@ from .stage import Stage
 
 __all__ = [
     "Pipearray",
-    "First", "Stage",
+    "First", "Previous",
     "PipelineError",
     "Fork",
     "Pipeline",
-    "Previous",
+    "Stage",
 ]
