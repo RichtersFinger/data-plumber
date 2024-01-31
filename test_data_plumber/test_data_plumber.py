@@ -53,6 +53,46 @@ def test_pipeline_run_minimal_two_stage():
     assert output.data["stage2"] == 0
 
 
+def test_pipeline_minimal_pass_through():
+    """
+    Test method `run` of class `Pipeline` for pass through of kwargs in
+    minimal setup.
+    """
+
+    test_arg0 = 0
+
+    output = Pipeline(
+        Stage(
+            action=lambda out, test_arg, **kwargs:
+                out.update({"test": test_arg})
+        ),
+        Stage(
+            action=lambda out, **kwargs:
+                out.update({"test2": kwargs["test_arg"]})
+        ),
+    ).run(test_arg=test_arg0)
+
+    assert "test" in output.data
+    assert output.data["test"] == test_arg0
+    assert output.data["test2"] == test_arg0
+
+
+@pytest.mark.parametrize(
+    "kwarg",
+    ["out", "primer", "status", "count"]
+)
+def test_pipeline_reserved_kwargs(kwarg):
+    """
+    Test exception behavior of method `run` of class `Pipeline` for
+    reserved keywords.
+    """
+
+    with pytest.raises(PipelineError):
+        Pipeline(
+            Stage(),
+        ).run(**{kwarg: 0})
+
+
 # #############################
 # ### PipelineOutput
 

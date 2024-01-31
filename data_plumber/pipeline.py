@@ -114,9 +114,18 @@ class Pipeline:
         Trigger `Pipeline` execution.
 
         Keyword arguments:
-        kwargs -- keyword arguments that are passed into `Stage`s as
-                  dictionary `in_`
+        kwargs -- keyword arguments that are forwarded into `Stage`s
         """
+
+        # check for reserved kwargs
+        if (bad_kwarg := next(
+            (p for p in kwargs if p in ["out", "primer", "status", "count"]),
+            None
+        )):
+            raise PipelineError(
+                f"Keyword '{bad_kwarg}' is reserved in the context of a "
+                + "'Pipeline.run'-command."
+            )
 
         stages: list[StageRecord] = []  # record of results
         data = self._initialize_output()  # output data
@@ -175,23 +184,23 @@ class Pipeline:
             # all requirements met
             stage_count = stage_count + 1
             # primer
-            primer = s.primer(in_=kwargs, out=data, count=stage_count)
+            primer = s.primer(**kwargs, out=data, count=stage_count)
             # action
             s.action(
-                in_=kwargs,
+                **kwargs,
                 out=data,
                 primer=primer,
                 count=stage_count
             )
             # status/message
             status = s.status(
-                in_=kwargs,
+                **kwargs,
                 out=data,
                 primer=primer,
                 count=stage_count
             )
             msg = s.message(
-                in_=kwargs,
+                **kwargs,
                 out=data,
                 primer=primer,
                 count=stage_count,
