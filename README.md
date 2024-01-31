@@ -1,3 +1,5 @@
+![Tests](https://github.com/RichtersFinger/data-plumber/actions/workflows/tests.yml/badge.svg?branch=main)
+
 # data-plumber
 `data-plumber` is a lightweight but versatile python-framework for multi-stage
 information processing. It allows to construct processing pipelines from both
