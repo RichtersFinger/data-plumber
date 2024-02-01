@@ -44,6 +44,11 @@ class Pipeline:
               in the positional section
     initialize_output -- generator for initial data of `Pipeline.run`s
                          (default lambda: {})
+    finalize_output -- `Callable` that is executed after the execution
+                       of `Pipeline.run` exits; gets passed the
+                       `Pipeline`'s persistent `data`-object and `run`'s
+                       kwargs (see also docs of `Stage`)
+                       (default None)
     exit_on_status -- stop `Pipeline` execution if
                       * any `Stage` returns this status (int)
                       * it returns `True` (Callable)
@@ -56,11 +61,13 @@ class Pipeline:
         self,
         *args: str | Stage | Fork,
         initialize_output: Callable[..., Any] = lambda: {},
+        finalize_output: Optional[Callable[..., Any]] = None,
         exit_on_status: Optional[int | Callable[[int], bool]] = None,
         loop: bool = False,
         **kwargs: Stage | Fork
     ) -> None:
         self._initialize_output = initialize_output
+        self._finalize_output = finalize_output
         self._exit_on_status = \
             exit_on_status if callable(exit_on_status) \
             else lambda status: status == exit_on_status
@@ -230,6 +237,8 @@ class Pipeline:
                 break
             index = index + 1
 
+        if self._finalize_output is not None:
+            self._finalize_output(data=data, **kwargs)
         return PipelineOutput(
             list(map(lambda x: x[1:], records)),  # trim _StageRecord
             kwargs,

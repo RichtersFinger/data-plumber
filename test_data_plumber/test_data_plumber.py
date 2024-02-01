@@ -178,6 +178,23 @@ def test_pipeline_run_initialize_output():
 
 
 # #############################
+# ### Pipeline.finalize_output
+
+def test_pipeline_run_finalize_output():
+    """
+    Test `Pipeline`-property `finalize_output` with method `run`.
+    """
+
+    output = Pipeline(
+        Stage(),
+        finalize_output=lambda data, **kwargs: data.update(kwargs)
+    ).run(finalizer="finalizer")
+
+    assert "finalizer" in output.data
+    assert output.data["finalizer"] == "finalizer"
+
+
+# #############################
 # ### Pipeline.exit_on_status
 
 def test_pipeline_run_exit_on_status():
