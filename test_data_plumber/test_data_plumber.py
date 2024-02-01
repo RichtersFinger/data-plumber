@@ -187,6 +187,26 @@ def test_pipeline_run_exit_on_status():
     assert output.data == {"stage1": 1}
 
 
+def test_pipeline_run_exit_on_status_callable():
+    """
+    Test `Pipeline`-property `exit_on_status` as callable with method
+    `run`.
+    """
+
+    output = Pipeline(
+        Stage(
+            action=lambda out, **kwargs: out.update({"stage1": 1}),
+            status=lambda **kwargs: 1
+        ),
+        Stage(
+            action=lambda out, **kwargs: out.update({"stage2": 0})
+        ),
+        exit_on_status=lambda status: status > 0
+    ).run()
+
+    assert output.data == {"stage1": 1}
+
+
 # #############################
 # ### Pipeline.len
 

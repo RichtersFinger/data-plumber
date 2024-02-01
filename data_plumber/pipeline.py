@@ -44,8 +44,9 @@ class Pipeline:
               in the positional section
     initialize_output -- generator for initial data of `Pipeline.run`s
                          (default lambda: {})
-    exit_on_status -- stop `Pipeline` execution if any `Stage` returns
-                      this status
+    exit_on_status -- stop `Pipeline` execution if
+                      * any `Stage` returns this status (int)
+                      * it returns `True` (Callable)
                       (default `None`)
     loop -- if `True`, loop around and re-iterate `Stage`s after
             completion of last `Stage` in `Pipeline`
@@ -55,12 +56,14 @@ class Pipeline:
         self,
         *args: str | Stage | Fork,
         initialize_output: Callable[..., Any] = lambda: {},
-        exit_on_status: Optional[int] = None,
+        exit_on_status: Optional[int | Callable[[int], bool]] = None,
         loop: bool = False,
         **kwargs: Stage | Fork
     ) -> None:
         self._initialize_output = initialize_output
-        self._exit_on_status = exit_on_status
+        self._exit_on_status = \
+            exit_on_status if callable(exit_on_status) \
+            else lambda status: status == exit_on_status
         self._loop = loop
         self._id = str(uuid4())
 
@@ -223,7 +226,7 @@ class Pipeline:
                 status=status
             )
             records.append((_s, msg, status))
-            if status == self._exit_on_status:
+            if self._exit_on_status(status):
                 break
             index = index + 1
 
