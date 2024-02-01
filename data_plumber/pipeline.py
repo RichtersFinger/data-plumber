@@ -105,21 +105,27 @@ class Pipeline:
                 match = ref.get(
                     context
                 )
-            if match is None:
+            if match is None or match.status is None:
                 # this Stage has not been executed
                 raise PipelineError(
                     f"Referenced Stage '{str(ref)}' (required by Stage"
                     + f" '{_s}') has not been executed yet."
                 )
             if callable(req):
-                if not req(status=match[2]):  # type: ignore[call-arg]
+                if not req(status=match.status):  # type: ignore[call-arg]
                     # requirement not met
                     return False
             else:
-                if match[2] != req:
+                if match.status != req:
                     # requirement not met
                     return False
         return True
+
+    def _loop_index(self, index: int) -> int:
+        if self._loop:  # loop by truncating index
+            return index % len(self._pipeline)
+        return index
+
 
     @property
     def id(self) -> str:
@@ -160,8 +166,7 @@ class Pipeline:
         stage_count = -1
         index = 0
         while True:
-            if self._loop:  # loop by truncating index
-                index = index % len(self._pipeline)
+            index = self._loop_index(index)
             if index >= len(self._pipeline):  # detect exit point
                 break
 
@@ -177,34 +182,48 @@ class Pipeline:
                 # ##########
                 # Fork
                 fork_target = s.eval(
-                    PipelineContext(records, kwargs, data, stage_count)
+                    PipelineContext(
+                        self._pipeline, index, records, kwargs, data, stage_count
+                    )
                 )
                 if fork_target is None:  # exit pipeline on request
                     break
-                if isinstance(fork_target, StageRef):  # get id via StageRef.get
+                if isinstance(fork_target, str):  # new index via index()
                     try:
-                        fork_target = fork_target.get(
-                            PipelineContext(records, kwargs, data, stage_count)
-                        )[0]  # type: ignore[index]
-                    except TypeError as exc:
+                        index = self._pipeline.index(fork_target)
+                    except ValueError as exc:
                         raise PipelineError(
-                            f"Unable to resolve fork's StageRef '{str(fork_target)}' at stage #{str(stage_count)}. "
+                            f"Unable to resolve reference to '{str(fork_target)}' at stage #{str(stage_count)}. "
                             + f"Records until error: {', '.join(map(str, records))}"
                         ) from exc
-                try:
-                    index = self._pipeline.index(fork_target)
-                except ValueError as exc:
-                    raise PipelineError(
-                        f"Unable to resolve reference to '{str(fork_target)}' at stage #{str(stage_count)}. "
-                        + f"Records until error: {', '.join(map(str, records))}"
-                    ) from exc
+                elif isinstance(fork_target, int):  # new index via addition
+                    index = self._loop_index(index + fork_target)
+                    if index < 0 or index >= len(self._pipeline):
+                        raise PipelineError(
+                            "Unable to resolve Fork reference (out of bounds). "
+                            + f"Records until error: {', '.join(map(str, records))}"
+                        )
+                else:  # new index via StageRef.get
+                    ref = fork_target.get(
+                        PipelineContext(
+                            self._pipeline, index, records, kwargs, data, stage_count
+                        )
+                    )
+                    if ref is None:
+                        raise PipelineError(
+                            f"Unable to resolve fork's StageRef '{str(ref)}' at stage #{str(stage_count)}. "
+                            + f"Records until error: {', '.join(map(str, records))}"
+                        )
+                    index = self._loop_index(index + ref.relative_index)
                 continue
             # ##########
             # Stage
             # requires
             if s.requires is not None:
                 if not self._meets_requirements(
-                    _s, PipelineContext(records, kwargs, data, stage_count)
+                    _s, PipelineContext(
+                        self._pipeline, index, records, kwargs, data, stage_count
+                    )
                 ):
                     index = index + 1
                     continue

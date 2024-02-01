@@ -14,7 +14,8 @@ pytest -v -s --cov=data_plumber.array \
 
 import pytest
 from data_plumber \
-    import Pipeline, Stage, Previous, First, Fork, PipelineError, Pipearray
+    import Pipeline, Stage, Previous, First, Last, Next, Skip, Fork, \
+        PipelineError, Pipearray
 from data_plumber.output import PipelineOutput
 
 
@@ -732,6 +733,91 @@ def test_pipeline_fork_exit():
 
     assert len(output.records) == 1
     assert output.data["test"] == 1
+
+
+def test_pipeline_fork_stageref_int():
+    """
+    Test returning `StageRef` and `int` from `Fork`-conditional with
+    method `run` of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(
+            action=lambda out, **kwargs: out.update({"test": out["test"] + 1}),
+        ),
+        b=Stage(
+            action=lambda out, **kwargs: out.update({"test": -1}),
+        ),
+        f=Fork(
+            lambda out, **kwargs: Previous if out["test"] == 1 else 1
+        ),
+        initialize_output=lambda: {"test": 0}
+    ).run()
+
+    assert len(output.records) == 3
+    assert output.data["test"] == -1
+
+
+def test_pipeline_fork_stageref_first_last():
+    """
+    Test returning `First` and `Last` from `Fork`-conditional with
+    method `run` of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(
+            action=lambda out, **kwargs: out.update({"test": out["test"] + 1}),
+        ),
+        b=Stage(
+            action=lambda out, **kwargs: out.update({"test": -1}),
+        ),
+        f=Fork(
+            lambda out, **kwargs: First if out["test"] == 1 else Last
+        ),
+        initialize_output=lambda: {"test": 0}
+    ).run()
+
+    assert len(output.records) == 3
+    assert output.data["test"] == -1
+
+
+def test_pipeline_fork_stageref_next():
+    """
+    Test returning `Next` from `Fork`-conditional with method `run`
+    of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(),
+        b=Stage(),
+        f=Fork(
+            lambda out, **kwargs: Next
+        ),
+    ).run()
+
+    assert len(output.records) == 2
+
+
+
+def test_pipeline_fork_stageref_skip():
+    """
+    Test returning `Skip` from `Fork`-conditional with method `run`
+    of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(),
+        b=Stage(),
+        f=Fork(
+            lambda out, **kwargs: Skip
+        ),
+    ).run()
+
+    assert len(output.records) == 1
 
 
 def test_fork_exception():
