@@ -144,6 +144,18 @@ def test_pipeline_output_two_stage():
     assert output.records[1] == ("stage 2", 1)
 
 
+def test_pipeline_output_empty():
+    """
+    Test properties of class `PipelineOutput.last_X` in case of empty
+    output.
+    """
+
+    output = Pipeline().run()
+
+    assert output.last_message is None
+    assert output.last_status is None
+    assert output.last_record is None
+
 # #############################
 # ### Pipeline.initialize_output
 
