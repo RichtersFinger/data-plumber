@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.0] - 2024-02-01
+
+### Changed
+
+- refactored internal modules (`cf7045f`)
+
+### Added
+
+- added `StageRefs` `Next`, `Last`, and `Skip` (`14abaa7`)
+- added optional finalizer-`Callable` to `Pipeline` (`d95e5b6`)
+- added support for `Callable` in `Pipeline`-argument `exit_on_status` (`154c67b`)
+
+### Fixed
+
+- `PipelineOutput.last_X`-methods now return `None` in case of empty records (``)
+
 ## [1.0.0] - 2024-01-31
 
 ### Changed
