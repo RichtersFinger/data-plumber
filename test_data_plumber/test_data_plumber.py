@@ -8,6 +8,7 @@ pytest -v -s --cov=data_plumber.array \
     --cov=data_plumber.fork \
     --cov=data_plumber.output \
     --cov=data_plumber.pipeline \
+    --cov=data_plumber.ref \
     --cov=data_plumber.stage
 """
 

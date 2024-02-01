@@ -8,7 +8,8 @@ in a `Pipeline.run`.
 from typing import Callable, Optional
 from uuid import uuid4
 
-from .context import PipelineContext, StageRef
+from .context import PipelineContext
+from .ref import StageRef
 
 
 class Fork:

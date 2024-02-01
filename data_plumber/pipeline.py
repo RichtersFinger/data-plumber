@@ -8,10 +8,11 @@ of the data-plumber-framework.
 from typing import Optional, Callable, Any, Iterator
 from uuid import uuid4
 
-from .context import _StageRecord, PipelineContext, StageRef
+from .context import PipelineContext
 from .error import PipelineError
-from .output import PipelineOutput
+from .output import _StageRecord, PipelineOutput
 from .fork import Fork
+from .ref import StageRef
 from .stage import Stage
 
 
@@ -96,7 +97,7 @@ class Pipeline:
             if isinstance(ref, str):  # by identifier
                 # find latest status of Stage with this identifier
                 match = next(
-                    (stage for _, stage in enumerate(reversed(context.stages))
+                    (stage for _, stage in enumerate(reversed(context.records))
                         if stage[0] == ref),
                     None
                 )

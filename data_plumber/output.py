@@ -5,10 +5,14 @@ This module defines the output-format `PipelineOutput` of a
 `Pipeline.run`.
 """
 
-from typing import Any, Optional
+from typing import TypeAlias, Any, Optional
 from dataclasses import dataclass
 
-from .context import StageRecord
+
+_StageRecord: TypeAlias = tuple[str, str, int]
+"""Tuple of `Stage`-identifier and evaluated message and status."""
+StageRecord: TypeAlias = tuple[str, int]
+"""Tuple of message and status from a `Stage`'s-evaluation."""
 
 
 @dataclass
