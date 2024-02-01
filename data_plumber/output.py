@@ -5,10 +5,14 @@ This module defines the output-format `PipelineOutput` of a
 `Pipeline.run`.
 """
 
-from typing import Any
+from typing import TypeAlias, Any, Optional
 from dataclasses import dataclass
 
-from .context import StageRecord
+
+_StageRecord: TypeAlias = tuple[str, str, int]
+"""Tuple of `Stage`-identifier and evaluated message and status."""
+StageRecord: TypeAlias = tuple[str, int]
+"""Tuple of message and status from a `Stage`'s-evaluation."""
 
 
 @dataclass
@@ -38,16 +42,25 @@ class PipelineOutput:
     data: Any
 
     @property
-    def last_record(self) -> StageRecord:
+    def last_record(self) -> Optional[StageRecord]:
         """Returns the last `Stage`'s result."""
-        return self.records[-1]
+        try:
+            return self.records[-1]
+        except IndexError:
+            return None
 
     @property
-    def last_status(self) -> int:
+    def last_status(self) -> Optional[int]:
         """Returns the last `Stage`'s status result."""
-        return self.records[-1][1]
+        try:
+            return self.records[-1][1]
+        except IndexError:
+            return None
 
     @property
-    def last_message(self) -> str:
+    def last_message(self) -> Optional[str]:
         """Returns the last `Stage`'s message result."""
-        return self.records[-1][0]
+        try:
+            return self.records[-1][0]
+        except IndexError:
+            return None

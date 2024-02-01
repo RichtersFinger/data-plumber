@@ -8,12 +8,14 @@ pytest -v -s --cov=data_plumber.array \
     --cov=data_plumber.fork \
     --cov=data_plumber.output \
     --cov=data_plumber.pipeline \
+    --cov=data_plumber.ref \
     --cov=data_plumber.stage
 """
 
 import pytest
 from data_plumber \
-    import Pipeline, Stage, Previous, First, Fork, PipelineError, Pipearray
+    import Pipeline, Stage, Previous, First, Last, Next, Skip, Fork, \
+        PipelineError, Pipearray
 from data_plumber.output import PipelineOutput
 
 
@@ -144,6 +146,18 @@ def test_pipeline_output_two_stage():
     assert output.records[1] == ("stage 2", 1)
 
 
+def test_pipeline_output_empty():
+    """
+    Test properties of class `PipelineOutput.last_X` in case of empty
+    output.
+    """
+
+    output = Pipeline().run()
+
+    assert output.last_message is None
+    assert output.last_status is None
+    assert output.last_record is None
+
 # #############################
 # ### Pipeline.initialize_output
 
@@ -166,6 +180,23 @@ def test_pipeline_run_initialize_output():
 
 
 # #############################
+# ### Pipeline.finalize_output
+
+def test_pipeline_run_finalize_output():
+    """
+    Test `Pipeline`-property `finalize_output` with method `run`.
+    """
+
+    output = Pipeline(
+        Stage(),
+        finalize_output=lambda data, **kwargs: data.update(kwargs)
+    ).run(finalizer="finalizer")
+
+    assert "finalizer" in output.data
+    assert output.data["finalizer"] == "finalizer"
+
+
+# #############################
 # ### Pipeline.exit_on_status
 
 def test_pipeline_run_exit_on_status():
@@ -182,6 +213,26 @@ def test_pipeline_run_exit_on_status():
             action=lambda out, **kwargs: out.update({"stage2": 0})
         ),
         exit_on_status=1
+    ).run()
+
+    assert output.data == {"stage1": 1}
+
+
+def test_pipeline_run_exit_on_status_callable():
+    """
+    Test `Pipeline`-property `exit_on_status` as callable with method
+    `run`.
+    """
+
+    output = Pipeline(
+        Stage(
+            action=lambda out, **kwargs: out.update({"stage1": 1}),
+            status=lambda **kwargs: 1
+        ),
+        Stage(
+            action=lambda out, **kwargs: out.update({"stage2": 0})
+        ),
+        exit_on_status=lambda status: status > 0
     ).run()
 
     assert output.data == {"stage1": 1}
@@ -539,6 +590,34 @@ def test_pipeline_run_stage_requires_callable(status, out):
     assert output.data == out
 
 
+@pytest.mark.parametrize(
+    ("status", "out"),
+    [
+        (0, {"stage1": 0, "stage2": 0}),
+        (1, {"stage1": 1}),
+    ],
+    ids=["requirements_met", "requirements_not_met"]
+)
+def test_pipeline_run_stage_requires_byid(status, out):
+    """
+    Test `requires`-property of `Stage` with reference as string identifier.
+    """
+
+    output = Pipeline(
+        "a", "b",
+        a=Stage(
+            action=lambda out, **kwargs: out.update({"stage1": status}),
+            status=lambda **kwargs: status
+        ),
+        b=Stage(
+            requires={"a": 0},
+            action=lambda out, **kwargs: out.update({"stage2": 0})
+        ),
+    ).run()
+
+    assert output.data == out
+
+
 # #############################
 # ### Pipeline.named stages
 
@@ -682,6 +761,90 @@ def test_pipeline_fork_exit():
 
     assert len(output.records) == 1
     assert output.data["test"] == 1
+
+
+def test_pipeline_fork_stageref_int():
+    """
+    Test returning `StageRef` and `int` from `Fork`-conditional with
+    method `run` of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(
+            action=lambda out, **kwargs: out.update({"test": out["test"] + 1}),
+        ),
+        b=Stage(
+            action=lambda out, **kwargs: out.update({"test": -1}),
+        ),
+        f=Fork(
+            lambda out, **kwargs: Previous if out["test"] == 1 else 1
+        ),
+        initialize_output=lambda: {"test": 0}
+    ).run()
+
+    assert len(output.records) == 3
+    assert output.data["test"] == -1
+
+
+def test_pipeline_fork_stageref_first_last():
+    """
+    Test returning `First` and `Last` from `Fork`-conditional with
+    method `run` of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(
+            action=lambda out, **kwargs: out.update({"test": out["test"] + 1}),
+        ),
+        b=Stage(
+            action=lambda out, **kwargs: out.update({"test": -1}),
+        ),
+        f=Fork(
+            lambda out, **kwargs: First if out["test"] == 1 else Last
+        ),
+        initialize_output=lambda: {"test": 0}
+    ).run()
+
+    assert len(output.records) == 3
+    assert output.data["test"] == -1
+
+
+def test_pipeline_fork_stageref_next():
+    """
+    Test returning `Next` from `Fork`-conditional with method `run`
+    of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(),
+        b=Stage(),
+        f=Fork(
+            lambda out, **kwargs: Next
+        ),
+    ).run()
+
+    assert len(output.records) == 2
+
+
+def test_pipeline_fork_stageref_skip():
+    """
+    Test returning `Skip` from `Fork`-conditional with method `run`
+    of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(),
+        b=Stage(),
+        f=Fork(
+            lambda out, **kwargs: Skip
+        ),
+    ).run()
+
+    assert len(output.records) == 1
 
 
 def test_fork_exception():

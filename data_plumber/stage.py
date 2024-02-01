@@ -8,7 +8,7 @@ a `Pipeline`.
 from typing import Optional, Callable, Any
 from uuid import uuid4
 
-from .context import StageRef
+from .ref import StageRef
 
 
 class Stage:

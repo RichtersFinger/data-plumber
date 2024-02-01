@@ -8,7 +8,8 @@ in a `Pipeline.run`.
 from typing import Callable, Optional
 from uuid import uuid4
 
-from .context import PipelineContext, StageRef
+from .context import PipelineContext
+from .ref import StageRef
 
 
 class Fork:
@@ -38,13 +39,14 @@ class Fork:
      <data_plumber.fork.Fork object at ...>
 
     Keyword arguments:
-    fork -- callable that returns a reference to a `Stage`
+    fork -- callable that returns a reference to a `Stage` as (StageRef
+            | str | int)
             (kwargs: `out`, `count`)
     """
 
     def __init__(
         self,
-        fork: Callable[..., Optional[StageRef | str]]
+        fork: Callable[..., Optional[StageRef | str | int]]
     ) -> None:
         self._fork = fork
         self._id = str(uuid4())
@@ -54,7 +56,8 @@ class Fork:
         """Returns a `Stage`'s `id`."""
         return self._id
 
-    def eval(self, context: PipelineContext) -> Optional[StageRef | str]:
+    def eval(self, context: PipelineContext) \
+            -> Optional[StageRef | str | int]:
         """
         Returns the value from evaluation of the `Fork`s conditional
         function.

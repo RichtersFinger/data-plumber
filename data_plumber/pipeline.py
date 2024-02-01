@@ -8,10 +8,11 @@ of the data-plumber-framework.
 from typing import Optional, Callable, Any, Iterator
 from uuid import uuid4
 
-from .context import _StageRecord, PipelineContext, StageRef
+from .context import PipelineContext
 from .error import PipelineError
-from .output import PipelineOutput
+from .output import _StageRecord, PipelineOutput
 from .fork import Fork
+from .ref import StageRef
 from .stage import Stage
 
 
@@ -44,8 +45,14 @@ class Pipeline:
               in the positional section
     initialize_output -- generator for initial data of `Pipeline.run`s
                          (default lambda: {})
-    exit_on_status -- stop `Pipeline` execution if any `Stage` returns
-                      this status
+    finalize_output -- `Callable` that is executed after the execution
+                       of `Pipeline.run` exits; gets passed the
+                       `Pipeline`'s persistent `data`-object and `run`'s
+                       kwargs (see also docs of `Stage`)
+                       (default None)
+    exit_on_status -- stop `Pipeline` execution if
+                      * any `Stage` returns this status (int)
+                      * it returns `True` (Callable)
                       (default `None`)
     loop -- if `True`, loop around and re-iterate `Stage`s after
             completion of last `Stage` in `Pipeline`
@@ -55,12 +62,16 @@ class Pipeline:
         self,
         *args: str | Stage | Fork,
         initialize_output: Callable[..., Any] = lambda: {},
-        exit_on_status: Optional[int] = None,
+        finalize_output: Optional[Callable[..., Any]] = None,
+        exit_on_status: Optional[int | Callable[[int], bool]] = None,
         loop: bool = False,
         **kwargs: Stage | Fork
     ) -> None:
         self._initialize_output = initialize_output
-        self._exit_on_status = exit_on_status
+        self._finalize_output = finalize_output
+        self._exit_on_status = \
+            exit_on_status if callable(exit_on_status) \
+            else lambda status: status == exit_on_status
         self._loop = loop
         self._id = str(uuid4())
 
@@ -82,33 +93,47 @@ class Pipeline:
     def _meets_requirements(self, _s: str, context: PipelineContext) -> bool:
         s = self._stage_catalog[_s]
         for ref, req in s.requires.items():  # type: ignore[union-attr]
-            match = None
+            match_status = None
             if isinstance(ref, str):  # by identifier
                 # find latest status of Stage with this identifier
-                match = next(
-                    (stage for _, stage in enumerate(reversed(context.stages))
+                ref_record = next(
+                    (stage for _, stage in enumerate(reversed(context.records))
                         if stage[0] == ref),
                     None
                 )
+                if ref_record is None:
+                    # this Stage has not been executed
+                    raise PipelineError(
+                        f"Referenced Stage '{ref}' (required by Stage"
+                        + f" '{_s}') has not been executed yet."
+                    )
+                match_status = ref_record[2]
             else:  # by StageRef
-                match = ref.get(
+                ref_output = ref.get(
                     context
                 )
-            if match is None:
-                # this Stage has not been executed
-                raise PipelineError(
-                    f"Referenced Stage '{str(ref)}' (required by Stage"
-                    + f" '{_s}') has not been executed yet."
-                )
+                if ref_output is None or ref_output.status is None:
+                    # this Stage has not been executed
+                    raise PipelineError(
+                        f"Referenced Stage '{str(ref)}' (required by Stage"
+                        + f" '{_s}') has not been executed yet."
+                    )
+                match_status = ref_output.status
             if callable(req):
-                if not req(status=match[2]):  # type: ignore[call-arg]
+                if not req(status=match_status):  # type: ignore[call-arg]
                     # requirement not met
                     return False
             else:
-                if match[2] != req:
+                if match_status != req:
                     # requirement not met
                     return False
         return True
+
+    def _loop_index(self, index: int) -> int:
+        if self._loop:  # loop by truncating index
+            return index % len(self._pipeline)
+        return index
+
 
     @property
     def id(self) -> str:
@@ -149,8 +174,7 @@ class Pipeline:
         stage_count = -1
         index = 0
         while True:
-            if self._loop:  # loop by truncating index
-                index = index % len(self._pipeline)
+            index = self._loop_index(index)
             if index >= len(self._pipeline):  # detect exit point
                 break
 
@@ -166,34 +190,48 @@ class Pipeline:
                 # ##########
                 # Fork
                 fork_target = s.eval(
-                    PipelineContext(records, kwargs, data, stage_count)
+                    PipelineContext(
+                        self._pipeline, index, records, kwargs, data, stage_count
+                    )
                 )
                 if fork_target is None:  # exit pipeline on request
                     break
-                if isinstance(fork_target, StageRef):  # get id via StageRef.get
+                if isinstance(fork_target, str):  # new index via index()
                     try:
-                        fork_target = fork_target.get(
-                            PipelineContext(records, kwargs, data, stage_count)
-                        )[0]  # type: ignore[index]
-                    except TypeError as exc:
+                        index = self._pipeline.index(fork_target)
+                    except ValueError as exc:
                         raise PipelineError(
-                            f"Unable to resolve fork's StageRef '{str(fork_target)}' at stage #{str(stage_count)}. "
+                            f"Unable to resolve reference to '{str(fork_target)}' at stage #{str(stage_count)}. "
                             + f"Records until error: {', '.join(map(str, records))}"
                         ) from exc
-                try:
-                    index = self._pipeline.index(fork_target)
-                except ValueError as exc:
-                    raise PipelineError(
-                        f"Unable to resolve reference to '{str(fork_target)}' at stage #{str(stage_count)}. "
-                        + f"Records until error: {', '.join(map(str, records))}"
-                    ) from exc
+                elif isinstance(fork_target, int):  # new index via addition
+                    index = self._loop_index(index + fork_target)
+                    if index < 0 or index >= len(self._pipeline):
+                        raise PipelineError(
+                            "Unable to resolve Fork reference (out of bounds). "
+                            + f"Records until error: {', '.join(map(str, records))}"
+                        )
+                else:  # new index via StageRef.get
+                    ref = fork_target.get(
+                        PipelineContext(
+                            self._pipeline, index, records, kwargs, data, stage_count
+                        )
+                    )
+                    if ref is None:
+                        raise PipelineError(
+                            f"Unable to resolve fork's StageRef '{str(ref)}' at stage #{str(stage_count)}. "
+                            + f"Records until error: {', '.join(map(str, records))}"
+                        )
+                    index = self._loop_index(index + ref.relative_index)
                 continue
             # ##########
             # Stage
             # requires
             if s.requires is not None:
                 if not self._meets_requirements(
-                    _s, PipelineContext(records, kwargs, data, stage_count)
+                    _s, PipelineContext(
+                        self._pipeline, index, records, kwargs, data, stage_count
+                    )
                 ):
                     index = index + 1
                     continue
@@ -223,10 +261,12 @@ class Pipeline:
                 status=status
             )
             records.append((_s, msg, status))
-            if status == self._exit_on_status:
+            if self._exit_on_status(status):
                 break
             index = index + 1
 
+        if self._finalize_output is not None:
+            self._finalize_output(data=data, **kwargs)
         return PipelineOutput(
             list(map(lambda x: x[1:], records)),  # trim _StageRecord
             kwargs,
