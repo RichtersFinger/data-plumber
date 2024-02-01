@@ -93,30 +93,38 @@ class Pipeline:
     def _meets_requirements(self, _s: str, context: PipelineContext) -> bool:
         s = self._stage_catalog[_s]
         for ref, req in s.requires.items():  # type: ignore[union-attr]
-            match = None
+            match_status = None
             if isinstance(ref, str):  # by identifier
                 # find latest status of Stage with this identifier
-                match = next(
+                ref_record = next(
                     (stage for _, stage in enumerate(reversed(context.records))
                         if stage[0] == ref),
                     None
                 )
+                if ref_record is None:
+                    # this Stage has not been executed
+                    raise PipelineError(
+                        f"Referenced Stage '{ref}' (required by Stage"
+                        + f" '{_s}') has not been executed yet."
+                    )
+                match_status = ref_record[2]
             else:  # by StageRef
-                match = ref.get(
+                ref_output = ref.get(
                     context
                 )
-            if match is None or match.status is None:
-                # this Stage has not been executed
-                raise PipelineError(
-                    f"Referenced Stage '{str(ref)}' (required by Stage"
-                    + f" '{_s}') has not been executed yet."
-                )
+                if ref_output is None or ref_output.status is None:
+                    # this Stage has not been executed
+                    raise PipelineError(
+                        f"Referenced Stage '{str(ref)}' (required by Stage"
+                        + f" '{_s}') has not been executed yet."
+                    )
+                match_status = ref_output.status
             if callable(req):
-                if not req(status=match.status):  # type: ignore[call-arg]
+                if not req(status=match_status):  # type: ignore[call-arg]
                     # requirement not met
                     return False
             else:
-                if match.status != req:
+                if match_status != req:
                     # requirement not met
                     return False
         return True

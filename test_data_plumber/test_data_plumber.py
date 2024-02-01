@@ -590,6 +590,34 @@ def test_pipeline_run_stage_requires_callable(status, out):
     assert output.data == out
 
 
+@pytest.mark.parametrize(
+    ("status", "out"),
+    [
+        (0, {"stage1": 0, "stage2": 0}),
+        (1, {"stage1": 1}),
+    ],
+    ids=["requirements_met", "requirements_not_met"]
+)
+def test_pipeline_run_stage_requires_byid(status, out):
+    """
+    Test `requires`-property of `Stage` with reference as string identifier.
+    """
+
+    output = Pipeline(
+        "a", "b",
+        a=Stage(
+            action=lambda out, **kwargs: out.update({"stage1": status}),
+            status=lambda **kwargs: status
+        ),
+        b=Stage(
+            requires={"a": 0},
+            action=lambda out, **kwargs: out.update({"stage2": 0})
+        ),
+    ).run()
+
+    assert output.data == out
+
+
 # #############################
 # ### Pipeline.named stages
 
@@ -799,7 +827,6 @@ def test_pipeline_fork_stageref_next():
     ).run()
 
     assert len(output.records) == 2
-
 
 
 def test_pipeline_fork_stageref_skip():
