@@ -48,10 +48,6 @@ class Fork:
         self,
         fork: Callable[..., Optional[StageRef | str | int]]
     ) -> None:
-        def _fork_stageref(
-        ) -> Callable[..., Optional[StageRef]]:
-            """Decorate fork-function to return only None or StageRef."""
-            value = fork()
         self._fork = fork
         self._id = str(uuid4())
 
