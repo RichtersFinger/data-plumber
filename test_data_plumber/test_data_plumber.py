@@ -79,6 +79,28 @@ def test_pipeline_minimal_pass_through():
     assert output.data["test2"] == test_arg0
 
 
+def test_pipeline_minimal_export():
+    """
+    Test method `run` of class `Pipeline` for exporting additional
+    kwargs from `Stage`.
+    """
+
+    test_arg0 = 1
+
+    output = Pipeline(
+        Stage(  # export kwarg
+            export=lambda **kwargs: {"new_kw": test_arg0}
+        ),
+        Stage(  # write that kwarg into output.data
+            action=lambda out, new_kw, **kwargs:
+                out.update({"new_kw": new_kw})
+        ),
+    ).run()
+
+    assert "new_kw" in output.data
+    assert output.data["new_kw"] == test_arg0
+
+
 @pytest.mark.parametrize(
     "kwarg",
     ["out", "primer", "status", "count"]

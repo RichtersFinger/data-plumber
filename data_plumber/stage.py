@@ -26,6 +26,9 @@ class Stage:
     * `status` (output of `Stage.status`),
     * `count` (index of `Stage` in execution of `Pipeline`)
 
+    `Callable`s are executed in the order:
+    `primer` > `action` > `export` > `status` > `message`
+
     Example usage:
      >>> from data_plumber import Stage
      >>> Stage(
@@ -56,6 +59,12 @@ class Stage:
     action -- `Callable` for main-step of processing
               (kwargs: `out`, `primer`, `count`)
               (default `lambda **kwargs: None`)
+    export -- `Callable` that returns a dictionary of additional kwargs
+              to be exported to the parent `Pipeline`; in the following
+              `Stage`s, these kwargs are then available as if they were
+              provided with the `Pipeline.run`-command
+              (kwargs: `out`, `primer`, `count`)
+              (default `lambda **kwargs: None`)
     status -- `Callable` for generation of `Stage`'s integer exit status
               (kwargs: `out`, `primer`, `count`)
               (default `lambda **kwargs: 0`)
@@ -71,6 +80,7 @@ class Stage:
         ] = None,
         primer: Callable[..., Any] = lambda **kwargs: None,
         action: Callable[..., Any] = lambda **kwargs: None,
+        export: Optional[Callable[..., Optional[dict[str, Any]]]] = None,
         status: Callable[..., int] = lambda **kwargs: 0,
         message: Callable[..., str] = lambda **kwargs: ""
     ) -> None:
@@ -87,6 +97,10 @@ class Stage:
                     self._requires[k] = v
         self._primer = primer
         self._action = action
+        if export is None:
+            self._export: Callable[..., dict[str, Any]] = lambda **kwargs: {}
+        else:
+            self._export = export  # type: ignore[assignment]
         self._status = status
         self._message = message
         self._id = str(uuid4())
@@ -112,6 +126,11 @@ class Stage:
     def action(self) -> Callable[..., Any]:
         """Returns a `Stage`'s `action` callable."""
         return self._action
+
+    @property
+    def export(self) -> Callable[..., Any]:
+        """Returns a `Stage`'s `export` callable."""
+        return self._export
 
     @property
     def status(self) -> Callable[..., int]:

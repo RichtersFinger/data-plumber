@@ -123,6 +123,17 @@ class Pipeline:
             return index % len(self._pipeline)
         return index
 
+    def _validate_external_kwargs(self, **kwargs):
+        # check for reserved kwargs
+        if (bad_kwarg := next(
+            (p for p in kwargs if p in ["out", "primer", "status", "count"]),
+            None
+        )):
+            raise PipelineError(
+                f"Keyword '{bad_kwarg}' is reserved in the context of a "
+                + "'Pipeline.run'-command."
+            )
+
     @property
     def id(self) -> str:
         """Returns a `Pipeline`'s `id`."""
@@ -146,15 +157,7 @@ class Pipeline:
         kwargs -- keyword arguments that are forwarded into `Stage`s
         """
 
-        # check for reserved kwargs
-        if (bad_kwarg := next(
-            (p for p in kwargs if p in ["out", "primer", "status", "count"]),
-            None
-        )):
-            raise PipelineError(
-                f"Keyword '{bad_kwarg}' is reserved in the context of a "
-                + "'Pipeline.run'-command."
-            )
+        self._validate_external_kwargs(**kwargs)
 
         records: list[_StageRecord] = []  # record of results
         data = self._initialize_output()  # output data
@@ -218,6 +221,14 @@ class Pipeline:
                 primer=primer,
                 count=stage_count
             )
+            exported_kwargs = s.export(
+                **kwargs,
+                out=data,
+                primer=primer,
+                count=stage_count
+            )
+            self._validate_external_kwargs(**exported_kwargs)
+            kwargs.update(exported_kwargs)
             # status/message
             status = s.status(
                 **kwargs,
