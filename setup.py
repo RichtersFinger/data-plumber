@@ -31,4 +31,10 @@ setup(
     packages=[
         "data_plumber",
     ],
+    package_data={
+        "data_plumber": [
+            "data_plumber/py.typed",
+        ],
+    },
+    include_package_data=True,
 )
