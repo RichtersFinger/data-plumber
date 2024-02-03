@@ -202,6 +202,67 @@ def test_pipeline_run_initialize_output():
 
 
 # #############################
+# ### Pipeline.run_for_kwargs
+
+def test_pipeline_run_for_kwargs():
+    """
+    Test method `run_for_kwargs` of `Pipeline`.
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, outer_arg, **kwargs:
+                out.update({"arg": outer_arg})
+        ),
+    )
+
+    @pipeline.run_for_kwargs(outer_arg=0)
+    def f(arg):
+        return arg
+
+    assert f() == 0
+
+
+def test_pipeline_run_for_kwargs_multiple():
+    """
+    Test method `run_for_kwargs` of `Pipeline` (only partial generation
+    of kwargs from pipeline).
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, outer_arg, **kwargs:
+                out.update({"arg1": outer_arg})
+        ),
+    )
+
+    @pipeline.run_for_kwargs(outer_arg=0)
+    def f(arg1, arg2):
+        return (arg1, arg2)
+
+    assert f(arg2=1) == (0, 1)
+
+
+def test_pipeline_run_for_kwargs_multiple_priority():
+    """
+    Test method `run_for_kwargs` of `Pipeline` (priority of kwargs).
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, outer_arg, **kwargs:
+                out.update({"arg1": outer_arg})
+        ),
+    )
+
+    @pipeline.run_for_kwargs(outer_arg=0)
+    def f(arg1, arg2):
+        return (arg1, arg2)
+
+    assert f(arg1=2, arg2=1) == (2, 1)
+
+
+# #############################
 # ### Pipeline.finalize_output
 
 def test_pipeline_run_finalize_output():

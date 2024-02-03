@@ -6,6 +6,7 @@ of the data-plumber-framework.
 """
 
 from typing import Optional, Callable, Any, Iterator
+from functools import wraps
 from uuid import uuid4
 
 from .context import PipelineContext
@@ -257,6 +258,41 @@ class Pipeline:
             kwargs,
             data
         )
+
+    def run_for_kwargs(self, **kwargs):
+        """
+        Returns a decorator that can be used to generate kwargs for the
+        decorated function based on the output of a `Pipeline.run`. This
+        requires for the persistent data-object (`PipelineOutput.data`)
+        to be a mapping that can be unpacked as `**PipelineOutput.data`.
+
+        Using this decorator on a function and calling that function
+         >>> @pipeline.run_for_kwargs(...)
+             def f(...): ...
+         >>> f()
+        is equivalent to
+         >>> f(**pipeline.run(...).data)
+
+        Note that it is also possible to only generate a subset of all
+        keyword arguments to a target function or have the target also
+        require positional arguments (which then still have to be
+        provided explicitly to the decorated function). When makign a
+        call to the decorated function with kwargs that are also output
+        from the `Pipeline.run`, the explicitly given arguments take
+        priority.
+
+        Keyword arguments:
+        kwargs -- keyword arguments that are forwarded into
+                  `Pipeline.run`
+        """
+
+        def decorator(function):
+            @wraps(function)
+            def wrapped(*args, **_kwargs):
+                output = self.run(**kwargs)
+                return function(*args, **(output.data | _kwargs))
+            return wrapped
+        return decorator
 
     def append(self, element: "str | Stage | Fork | Pipeline") -> None:
         """Append `element` to the `Pipeline`."""
