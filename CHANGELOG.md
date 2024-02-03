@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.8.0] - 2024-02-03
+
+### Changed
+
+- refactored `Fork` and `Stage` to transform string/integer-references to `Stage`s into `StageRef`s (`7ba677b`)
+
+### Added
+
+- added decorator-factory `Pipeline.run_for_kwargs` to generate kwargs for function calls (`fe616b2`)
+- added optional `Stage`-callable to export kwargs into `Pipeline.run` (`8eca1bc`)
+- added even more types of `StageRef`s: `PreviousN`, `NextN` (`576820c`)
+- added `py.typed`-marker to package (`04a2e1d`)
+- added more types of `StageRef`s: `StageById`, `StageByIndex`, `StageByIncrement` (`92d57ad`)
+
 ## [1.4.0] - 2024-02-01
 
 ### Changed

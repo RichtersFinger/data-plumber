@@ -6,13 +6,13 @@ of the data-plumber-framework.
 """
 
 from typing import Optional, Callable, Any, Iterator
+from functools import wraps
 from uuid import uuid4
 
 from .context import PipelineContext
 from .error import PipelineError
 from .output import _StageRecord, PipelineOutput
 from .fork import Fork
-from .ref import StageRef
 from .stage import Stage
 
 
@@ -93,32 +93,23 @@ class Pipeline:
     def _meets_requirements(self, _s: str, context: PipelineContext) -> bool:
         s = self._stage_catalog[_s]
         for ref, req in s.requires.items():  # type: ignore[union-attr]
-            match_status = None
-            if isinstance(ref, str):  # by identifier
-                # find latest status of Stage with this identifier
-                ref_record = next(
-                    (stage for _, stage in enumerate(reversed(context.records))
-                        if stage[0] == ref),
-                    None
+            # get target Stage from StageRef
+            ref_output = ref.get(
+                context
+            )
+            # get latest status of that Stage
+            match_status = next(
+                (stage.status for stage in reversed(context.records)
+                    if stage.id_ == ref_output.stage),
+                None
+            )
+            if match_status is None:
+                # this Stage does not exist or has not been executed
+                raise PipelineError(
+                    f"Referenced Stage '{ref_output.stage}' (required by Stage"
+                    + f" '{_s}') has not been executed yet. "
+                    + f"Records until error: {context.records}"
                 )
-                if ref_record is None:
-                    # this Stage has not been executed
-                    raise PipelineError(
-                        f"Referenced Stage '{ref}' (required by Stage"
-                        + f" '{_s}') has not been executed yet."
-                    )
-                match_status = ref_record[2]
-            else:  # by StageRef
-                ref_output = ref.get(
-                    context
-                )
-                if ref_output is None or ref_output.status is None:
-                    # this Stage has not been executed
-                    raise PipelineError(
-                        f"Referenced Stage '{str(ref)}' (required by Stage"
-                        + f" '{_s}') has not been executed yet."
-                    )
-                match_status = ref_output.status
             if callable(req):
                 if not req(status=match_status):  # type: ignore[call-arg]
                     # requirement not met
@@ -134,6 +125,17 @@ class Pipeline:
             return index % len(self._pipeline)
         return index
 
+    def _validate_external_kwargs(self, **kwargs):
+        reserved_words = ["out", "primer", "status", "count"]
+        # check for reserved kwargs
+        if (bad_kwarg := next(
+            (p for p in kwargs if p in reserved_words),
+            None
+        )):
+            raise PipelineError(
+                f"Keyword '{bad_kwarg}' is reserved in the context of a "
+                + f"'Pipeline.run'-command. (Reserved words: {reserved_words})"
+            )
 
     @property
     def id(self) -> str:
@@ -158,15 +160,7 @@ class Pipeline:
         kwargs -- keyword arguments that are forwarded into `Stage`s
         """
 
-        # check for reserved kwargs
-        if (bad_kwarg := next(
-            (p for p in kwargs if p in ["out", "primer", "status", "count"]),
-            None
-        )):
-            raise PipelineError(
-                f"Keyword '{bad_kwarg}' is reserved in the context of a "
-                + "'Pipeline.run'-command."
-            )
+        self._validate_external_kwargs(**kwargs)
 
         records: list[_StageRecord] = []  # record of results
         data = self._initialize_output()  # output data
@@ -183,46 +177,29 @@ class Pipeline:
                 s = self._stage_catalog[_s]
             except KeyError as exc:
                 raise PipelineError(
-                    f"Unable to resolve reference to Stage '{_s}' at stage #{str(stage_count)}. "
-                    + f"Records until error: {', '.join(map(str, records))}"
+                    f"Unable to resolve reference to Stage id '{_s}' in Pipeline with " \
+                    + f"stages {self._pipeline}. Records until error: {records}"
                 ) from exc
             if isinstance(s, Fork):
                 # ##########
                 # Fork
-                fork_target = s.eval(
+                # get StageRef
+                stage_ref = s.eval(
                     PipelineContext(
-                        self._pipeline, index, records, kwargs, data, stage_count
+                        self._pipeline, index, self._loop, records, kwargs,
+                        data, stage_count
                     )
                 )
-                if fork_target is None:  # exit pipeline on request
+                if stage_ref is None:  # exit pipeline on request
                     break
-                if isinstance(fork_target, str):  # new index via index()
-                    try:
-                        index = self._pipeline.index(fork_target)
-                    except ValueError as exc:
-                        raise PipelineError(
-                            f"Unable to resolve reference to '{str(fork_target)}' at stage #{str(stage_count)}. "
-                            + f"Records until error: {', '.join(map(str, records))}"
-                        ) from exc
-                elif isinstance(fork_target, int):  # new index via addition
-                    index = self._loop_index(index + fork_target)
-                    if index < 0 or index >= len(self._pipeline):
-                        raise PipelineError(
-                            "Unable to resolve Fork reference (out of bounds). "
-                            + f"Records until error: {', '.join(map(str, records))}"
-                        )
-                else:  # new index via StageRef.get
-                    ref = fork_target.get(
-                        PipelineContext(
-                            self._pipeline, index, records, kwargs, data, stage_count
-                        )
+                # get target of StageRef
+                ref = stage_ref.get(
+                    PipelineContext(
+                        self._pipeline, index, self._loop, records, kwargs,
+                        data, stage_count
                     )
-                    if ref is None:
-                        raise PipelineError(
-                            f"Unable to resolve fork's StageRef '{str(ref)}' at stage #{str(stage_count)}. "
-                            + f"Records until error: {', '.join(map(str, records))}"
-                        )
-                    index = self._loop_index(index + ref.relative_index)
+                )
+                index = ref.index
                 continue
             # ##########
             # Stage
@@ -230,7 +207,8 @@ class Pipeline:
             if s.requires is not None:
                 if not self._meets_requirements(
                     _s, PipelineContext(
-                        self._pipeline, index, records, kwargs, data, stage_count
+                        self._pipeline, index, self._loop, records, kwargs,
+                        data, stage_count
                     )
                 ):
                     index = index + 1
@@ -246,6 +224,14 @@ class Pipeline:
                 primer=primer,
                 count=stage_count
             )
+            exported_kwargs = s.export(
+                **kwargs,
+                out=data,
+                primer=primer,
+                count=stage_count
+            )
+            self._validate_external_kwargs(**exported_kwargs)
+            kwargs.update(exported_kwargs)
             # status/message
             status = s.status(
                 **kwargs,
@@ -260,7 +246,7 @@ class Pipeline:
                 count=stage_count,
                 status=status
             )
-            records.append((_s, msg, status))
+            records.append(_StageRecord(index, _s, msg, status))
             if self._exit_on_status(status):
                 break
             index = index + 1
@@ -268,10 +254,45 @@ class Pipeline:
         if self._finalize_output is not None:
             self._finalize_output(data=data, **kwargs)
         return PipelineOutput(
-            list(map(lambda x: x[1:], records)),  # trim _StageRecord
+            [r.prune() for r in records],  # prune `_StageRecord`s
             kwargs,
             data
         )
+
+    def run_for_kwargs(self, **kwargs):
+        """
+        Returns a decorator that can be used to generate kwargs for the
+        decorated function based on the output of a `Pipeline.run`. This
+        requires for the persistent data-object (`PipelineOutput.data`)
+        to be a mapping that can be unpacked as `**PipelineOutput.data`.
+
+        Using this decorator on a function and calling that function
+         >>> @pipeline.run_for_kwargs(...)
+             def f(...): ...
+         >>> f()
+        is equivalent to
+         >>> f(**pipeline.run(...).data)
+
+        Note that it is also possible to only generate a subset of all
+        keyword arguments to a target function or have the target also
+        require positional arguments (which then still have to be
+        provided explicitly to the decorated function). When makign a
+        call to the decorated function with kwargs that are also output
+        from the `Pipeline.run`, the explicitly given arguments take
+        priority.
+
+        Keyword arguments:
+        kwargs -- keyword arguments that are forwarded into
+                  `Pipeline.run`
+        """
+
+        def decorator(function):
+            @wraps(function)
+            def wrapped(*args, **_kwargs):
+                output = self.run(**kwargs)
+                return function(*args, **(output.data | _kwargs))
+            return wrapped
+        return decorator
 
     def append(self, element: "str | Stage | Fork | Pipeline") -> None:
         """Append `element` to the `Pipeline`."""

@@ -15,7 +15,7 @@ pytest -v -s --cov=data_plumber.array \
 import pytest
 from data_plumber \
     import Pipeline, Stage, Previous, First, Last, Next, Skip, Fork, \
-        PipelineError, Pipearray
+        StageById, StageByIndex, StageByIncrement, PipelineError, Pipearray
 from data_plumber.output import PipelineOutput
 
 
@@ -77,6 +77,28 @@ def test_pipeline_minimal_pass_through():
     assert "test" in output.data
     assert output.data["test"] == test_arg0
     assert output.data["test2"] == test_arg0
+
+
+def test_pipeline_minimal_export():
+    """
+    Test method `run` of class `Pipeline` for exporting additional
+    kwargs from `Stage`.
+    """
+
+    test_arg0 = 1
+
+    output = Pipeline(
+        Stage(  # export kwarg
+            export=lambda **kwargs: {"new_kw": test_arg0}
+        ),
+        Stage(  # write that kwarg into output.data
+            action=lambda out, new_kw, **kwargs:
+                out.update({"new_kw": new_kw})
+        ),
+    ).run()
+
+    assert "new_kw" in output.data
+    assert output.data["new_kw"] == test_arg0
 
 
 @pytest.mark.parametrize(
@@ -177,6 +199,67 @@ def test_pipeline_run_initialize_output():
     assert isinstance(output.data, list)
     assert len(output.data) == 1
     assert output.data[0] == 0
+
+
+# #############################
+# ### Pipeline.run_for_kwargs
+
+def test_pipeline_run_for_kwargs():
+    """
+    Test method `run_for_kwargs` of `Pipeline`.
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, outer_arg, **kwargs:
+                out.update({"arg": outer_arg})
+        ),
+    )
+
+    @pipeline.run_for_kwargs(outer_arg=0)
+    def f(arg):
+        return arg
+
+    assert f() == 0
+
+
+def test_pipeline_run_for_kwargs_multiple():
+    """
+    Test method `run_for_kwargs` of `Pipeline` (only partial generation
+    of kwargs from pipeline).
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, outer_arg, **kwargs:
+                out.update({"arg1": outer_arg})
+        ),
+    )
+
+    @pipeline.run_for_kwargs(outer_arg=0)
+    def f(arg1, arg2):
+        return (arg1, arg2)
+
+    assert f(arg2=1) == (0, 1)
+
+
+def test_pipeline_run_for_kwargs_multiple_priority():
+    """
+    Test method `run_for_kwargs` of `Pipeline` (priority of kwargs).
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, outer_arg, **kwargs:
+                out.update({"arg1": outer_arg})
+        ),
+    )
+
+    @pipeline.run_for_kwargs(outer_arg=0)
+    def f(arg1, arg2):
+        return (arg1, arg2)
+
+    assert f(arg1=2, arg2=1) == (2, 1)
 
 
 # #############################
@@ -845,6 +928,60 @@ def test_pipeline_fork_stageref_skip():
     ).run()
 
     assert len(output.records) == 1
+
+
+def test_pipeline_fork_stageref_stagebyid():
+    """
+    Test returning `StageById` from `Fork`-conditional with method `run`
+    of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(),
+        b=Stage(),
+        f=Fork(
+            lambda count, **kwargs: StageById("a") if count < 1 else None
+        ),
+    ).run()
+
+    assert len(output.records) == 2
+
+
+def test_pipeline_fork_stageref_stagebyindex():
+    """
+    Test returning `StageByIndex` from `Fork`-conditional with method `run`
+    of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(),
+        b=Stage(),
+        f=Fork(
+            lambda count, **kwargs: StageByIndex(0) if count < 1 else None
+        ),
+    ).run()
+
+    assert len(output.records) == 2
+
+
+def test_pipeline_fork_stageref_stagebyincrement():
+    """
+    Test returning `StageByIncrement` from `Fork`-conditional with method `run`
+    of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(),
+        b=Stage(),
+        f=Fork(
+            lambda count, **kwargs: StageByIncrement(-1) if count < 1 else None
+        ),
+    ).run()
+
+    assert len(output.records) == 2
 
 
 def test_fork_exception():

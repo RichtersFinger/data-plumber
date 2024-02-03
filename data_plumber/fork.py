@@ -9,7 +9,7 @@ from typing import Callable, Optional
 from uuid import uuid4
 
 from .context import PipelineContext
-from .ref import StageRef
+from .ref import StageRef, StageById, StageByIncrement
 
 
 class Fork:
@@ -56,16 +56,23 @@ class Fork:
         """Returns a `Stage`'s `id`."""
         return self._id
 
-    def eval(self, context: PipelineContext) \
-            -> Optional[StageRef | str | int]:
+    def eval(self, context: PipelineContext) -> Optional[StageRef]:
         """
-        Returns the value from evaluation of the `Fork`s conditional
+        Returns a `StageRef` or `None` as given with `Fork`s conditional
         function.
 
         Keyword arguments:
         context -- `Pipeline` execution context
         """
 
-        return self._fork(
+        result = self._fork(
             **context.kwargs, out=context.out, count=context.count
         )
+
+        # replace int or string by corresponding StageRef.
+        if isinstance(result, str):
+            return StageById(result)
+        if isinstance(result, int):
+            return StageByIncrement(result)
+        # otherwise it is either a StageRef already or None
+        return result
