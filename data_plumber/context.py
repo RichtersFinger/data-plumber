@@ -22,6 +22,7 @@ class PipelineContext:
               order of their registration (= order of execution with
               `Fork`s)
     current_position -- index of current position in stages
+    loop -- `loop`-property of `Pipeline`
     records -- list of previous `_StageRecord`s for the current
                `Pipeline.run`
     kwargs -- kwargs passed to `Pipeline.run`
@@ -31,6 +32,7 @@ class PipelineContext:
 
     stages: list[str]
     current_position: int
+    loop: bool
     records: list[_StageRecord]
     kwargs: dict[str, Any]
     out: Any

@@ -15,7 +15,7 @@ pytest -v -s --cov=data_plumber.array \
 import pytest
 from data_plumber \
     import Pipeline, Stage, Previous, First, Last, Next, Skip, Fork, \
-        PipelineError, Pipearray
+        StageById, StageByIndex, StageByIncrement, PipelineError, Pipearray
 from data_plumber.output import PipelineOutput
 
 
@@ -845,6 +845,60 @@ def test_pipeline_fork_stageref_skip():
     ).run()
 
     assert len(output.records) == 1
+
+
+def test_pipeline_fork_stageref_stagebyid():
+    """
+    Test returning `StageById` from `Fork`-conditional with method `run`
+    of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(),
+        b=Stage(),
+        f=Fork(
+            lambda count, **kwargs: StageById("a") if count < 1 else None
+        ),
+    ).run()
+
+    assert len(output.records) == 2
+
+
+def test_pipeline_fork_stageref_stagebyindex():
+    """
+    Test returning `StageByIndex` from `Fork`-conditional with method `run`
+    of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(),
+        b=Stage(),
+        f=Fork(
+            lambda count, **kwargs: StageByIndex(0) if count < 1 else None
+        ),
+    ).run()
+
+    assert len(output.records) == 2
+
+
+def test_pipeline_fork_stageref_stagebyincrement():
+    """
+    Test returning `StageByIncrement` from `Fork`-conditional with method `run`
+    of class `Pipeline`.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(),
+        b=Stage(),
+        f=Fork(
+            lambda count, **kwargs: StageByIncrement(-1) if count < 1 else None
+        ),
+    ).run()
+
+    assert len(output.records) == 2
 
 
 def test_fork_exception():

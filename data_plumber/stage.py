@@ -8,7 +8,7 @@ a `Pipeline`.
 from typing import Optional, Callable, Any
 from uuid import uuid4
 
-from .ref import StageRef
+from .ref import StageRef, StageById, StageByIncrement
 
 
 class Stage:
@@ -37,15 +37,19 @@ class Stage:
      <data_plumber.stage.Stage object at ...>
 
     Keyword arguments:
-    requires -- requirements for `Stage`-execution; dictionary with keys
-                being either `None`, a `StageRef`, or `str` (identifier
-                of a `Stage` in the context of a `Pipeline`; uses most
-                recent evaluation) and values being either an integer
-                (required output status of the keyed `Stage`) or a
-                `Callable` taking the status as an argument and
-                returning a `bool` (if it evaluates to `True`, the
-                `Stage`-requirement is met); `PipelineError` is raised
-                if references `Stage` has not yet been executed
+    requires -- requirements for `Stage`-execution being either `None`
+                or a dictionary with pairs of some reference to a `Stage`
+                and the required status (uses most recent evaluation);
+
+                key types are either `StageRef`, `str` (identifier of a
+                `Stage` in the context of a `Pipeline`), or `int`
+                (relative index in `Pipeline` stage arrangement);
+
+                values are either an integer value or a `Callable`
+                taking the status as an argument and returning a `bool`
+                (if it evaluates to `True`, the `Stage`-requirement is
+                met); `PipelineError` is raised if referenced `Stage`
+                has not yet been executed
     primer -- `Callable` for pre-processing data
               (kwargs: `out`, `count`)
               (default `lambda **kwargs: None`)
@@ -63,14 +67,24 @@ class Stage:
     def __init__(
         self,
         requires: Optional[
-            dict[StageRef | str, int | Callable[[int], bool]]
+            dict[StageRef | str | int, int | Callable[[int], bool]]
         ] = None,
         primer: Callable[..., Any] = lambda **kwargs: None,
         action: Callable[..., Any] = lambda **kwargs: None,
         status: Callable[..., int] = lambda **kwargs: 0,
         message: Callable[..., str] = lambda **kwargs: ""
     ) -> None:
-        self._requires = requires
+        if requires is None:
+            self._requires = None
+        else:
+            self._requires = {}
+            for k, v in requires.items():
+                if isinstance(k, str):
+                    self._requires[StageById(k)] = v
+                elif isinstance(k, int):
+                    self._requires[StageByIncrement(k)] = v
+                else:
+                    self._requires[k] = v
         self._primer = primer
         self._action = action
         self._status = status

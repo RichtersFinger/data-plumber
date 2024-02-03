@@ -12,7 +12,6 @@ from .context import PipelineContext
 from .error import PipelineError
 from .output import _StageRecord, PipelineOutput
 from .fork import Fork
-from .ref import StageRef
 from .stage import Stage
 
 
@@ -93,32 +92,16 @@ class Pipeline:
     def _meets_requirements(self, _s: str, context: PipelineContext) -> bool:
         s = self._stage_catalog[_s]
         for ref, req in s.requires.items():  # type: ignore[union-attr]
-            match_status = None
-            if isinstance(ref, str):  # by identifier
-                # find latest status of Stage with this identifier
-                ref_record = next(
-                    (stage for _, stage in enumerate(reversed(context.records))
-                        if stage[0] == ref),
-                    None
+            ref_output = ref.get(
+                context
+            )
+            if ref_output is None or ref_output.status is None:
+                # this Stage has not been executed
+                raise PipelineError(
+                    f"Referenced Stage '{str(ref)}' (required by Stage"
+                    + f" '{_s}') has not been executed yet."
                 )
-                if ref_record is None:
-                    # this Stage has not been executed
-                    raise PipelineError(
-                        f"Referenced Stage '{ref}' (required by Stage"
-                        + f" '{_s}') has not been executed yet."
-                    )
-                match_status = ref_record[2]
-            else:  # by StageRef
-                ref_output = ref.get(
-                    context
-                )
-                if ref_output is None or ref_output.status is None:
-                    # this Stage has not been executed
-                    raise PipelineError(
-                        f"Referenced Stage '{str(ref)}' (required by Stage"
-                        + f" '{_s}') has not been executed yet."
-                    )
-                match_status = ref_output.status
+            match_status = ref_output.status
             if callable(req):
                 if not req(status=match_status):  # type: ignore[call-arg]
                     # requirement not met
@@ -191,38 +174,24 @@ class Pipeline:
                 # Fork
                 fork_target = s.eval(
                     PipelineContext(
-                        self._pipeline, index, records, kwargs, data, stage_count
+                        self._pipeline, index, self._loop, records, kwargs,
+                        data, stage_count
                     )
                 )
                 if fork_target is None:  # exit pipeline on request
                     break
-                if isinstance(fork_target, str):  # new index via index()
-                    try:
-                        index = self._pipeline.index(fork_target)
-                    except ValueError as exc:
-                        raise PipelineError(
-                            f"Unable to resolve reference to '{str(fork_target)}' at stage #{str(stage_count)}. "
-                            + f"Records until error: {', '.join(map(str, records))}"
-                        ) from exc
-                elif isinstance(fork_target, int):  # new index via addition
-                    index = self._loop_index(index + fork_target)
-                    if index < 0 or index >= len(self._pipeline):
-                        raise PipelineError(
-                            "Unable to resolve Fork reference (out of bounds). "
-                            + f"Records until error: {', '.join(map(str, records))}"
-                        )
-                else:  # new index via StageRef.get
-                    ref = fork_target.get(
-                        PipelineContext(
-                            self._pipeline, index, records, kwargs, data, stage_count
-                        )
+                ref = fork_target.get(
+                    PipelineContext(
+                        self._pipeline, index, self._loop, records, kwargs,
+                        data, stage_count
                     )
-                    if ref is None:
-                        raise PipelineError(
-                            f"Unable to resolve fork's StageRef '{str(ref)}' at stage #{str(stage_count)}. "
-                            + f"Records until error: {', '.join(map(str, records))}"
-                        )
-                    index = self._loop_index(index + ref.relative_index)
+                )
+                if ref is None:
+                    raise PipelineError(
+                        f"Unable to resolve fork's StageRef '{str(ref)}' at stage #{str(stage_count)}. "
+                        + f"Records until error: {', '.join(map(str, records))}"
+                    )
+                index = self._loop_index(index + ref.relative_index)
                 continue
             # ##########
             # Stage
@@ -230,7 +199,8 @@ class Pipeline:
             if s.requires is not None:
                 if not self._meets_requirements(
                     _s, PipelineContext(
-                        self._pipeline, index, records, kwargs, data, stage_count
+                        self._pipeline, index, self._loop, records, kwargs,
+                        data, stage_count
                     )
                 ):
                     index = index + 1
