@@ -4,6 +4,9 @@ from setuptools import setup
 # read contents of README
 long_description = \
     (Path(__file__).parent / "README.md").read_text(encoding="utf8")
+# read contents of CHANGELOG
+changelog = \
+    (Path(__file__).parent / "CHANGELOG.md").read_text(encoding="utf8")
 
 # read contents of requirements.txt
 requirements = \
@@ -16,7 +19,7 @@ setup(
     version="1.4.0",
     name="data-plumber",
     description="lightweight but versatile python-framework for multi-stage information processing",
-    long_description=long_description,
+    long_description=long_description + "\n\n" + changelog,
     long_description_content_type="text/markdown",
     author="Steffen Richters-Finger",
     author_email="srichters@uni-muenster.de",
