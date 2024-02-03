@@ -5,7 +5,7 @@ This module defines classes for referencing and handling of flow-logic
 in a `Pipeline.run`.
 """
 
-from typing import TypeAlias
+from typing import TypeAlias, Optional
 import abc
 from dataclasses import dataclass
 
@@ -59,24 +59,51 @@ StageRef: TypeAlias = type[_StageRef]
 """TypeAlias for type of _StageRef: type[_StageRef]"""
 
 
-class Previous(_StageRef):
-    """Reference to the previous `Stage` during `Pipeline` execution."""
+def PreviousN(n: int, name: Optional[str] = None) -> StageRef:
+    """
+    Reference to a `Stage` that is `n` steps backwards in the
+    `Pipeline`'s list of `StageRecords`s.
 
-    @classmethod
-    def get(cls, context: PipelineContext) -> StageRefOutput:
-        if len(context.records) == 0:
-            raise PipelineError(
-                cls.STAGEREF_ERROR_MSG.format(
-                    target="'Previous' ",
-                    location=f"at index {str(context.current_position)}",
-                    stages=str(context.stages),
-                    records=cls._format_records(context.records)
-                )
-            )
-        return StageRefOutput(
-            context.records[-1].id_,
-            context.records[-1].index
+    Keyword arguments:
+    n -- number of steps
+    name -- used when generating an error-message
+            (default None; corresponds to 'Previous1', 'Previous2', ...)
+    """
+
+    if n < 0:
+        raise ValueError(
+            "'PreviousN'-StageRef only supports positive integers "
+            + f"(got '{n}')."
         )
+
+    _name = name or f"Previous{n}"
+
+    class _(_StageRef):
+        @classmethod
+        def get(cls, context: PipelineContext) -> StageRefOutput:
+            if len(context.records) < n:
+                raise PipelineError(
+                    cls.STAGEREF_ERROR_MSG.format(
+                        target=_name,
+                        location=f" at index {str(context.current_position)}",
+                        stages=str(context.stages),
+                        records=cls._format_records(context.records)
+                    )
+                )
+            return StageRefOutput(
+                context.records[-1].id_,
+                context.records[-1].index
+            )
+    _.__doc__ = f"Reference to a `Stage` that is `{n}` steps backwards" \
+        + " in the `Pipeline`'s list of `StageRecords`s."
+
+    return _
+
+
+Previous = PreviousN(1, "Previous")
+"""Reference to the previous `Stage` during `Pipeline` execution."""
+Previous.__doc__ = \
+    """Reference to the previous `Stage` during `Pipeline` execution."""
 
 
 class First(_StageRef):
@@ -119,44 +146,51 @@ class Last(_StageRef):
         )
 
 
-class Next(_StageRef):
+def NextN(n: int) -> StageRef:
+    """
+    Reference to a `Stage` that is `n` steps forward in the `Pipeline`'s
+    list of `Stage`s.
+
+    Keyword arguments:
+    n -- number of steps
+    """
+
+    if n < 0:
+        raise ValueError(
+            f"'NextN'-StageRef only supports positive integers (got '{n}')."
+        )
+
+    class _(_StageRef):
+        @classmethod
+        def get(cls, context: PipelineContext) -> StageRefOutput:
+            stage_index = context.current_position + n
+            if context.loop:
+                stage_index = stage_index % len(context.stages)
+            try:
+                return StageRefOutput(
+                    context.stages[stage_index],
+                    stage_index
+                )
+            except IndexError:  # allow Pipeline to exit via StageRef
+                return StageRefOutput(
+                    "",
+                    stage_index
+                )
+    _.__doc__ = f"Reference to a `Stage` that is `{n}` steps forward" \
+        + " in the `Pipeline`'s list of `Stage`s."
+
+    return _
+
+
+Next = NextN(1)
+"""Reference to the next `Stage` of registered `Stage`s in `Pipeline`."""
+Next.__doc__ = \
     """Reference to the next `Stage` of registered `Stage`s in `Pipeline`."""
 
-    @classmethod
-    def get(cls, context: PipelineContext) -> StageRefOutput:
-        stage_index = context.current_position + 1
-        if context.loop:
-            stage_index = stage_index % len(context.stages)
-        try:
-            return StageRefOutput(
-                context.stages[stage_index],
-                stage_index
-            )
-        except IndexError:  # allow Pipeline to exit via StageRef
-            return StageRefOutput(
-                "",
-                stage_index
-            )
-
-
-class Skip(_StageRef):
+Skip = NextN(2)
+"""Reference to the `Stage` after next of registered `Stage`s in `Pipeline`."""
+Skip.__doc__ = \
     """Reference to the `Stage` after next of registered `Stage`s in `Pipeline`."""
-
-    @classmethod
-    def get(cls, context: PipelineContext) -> StageRefOutput:
-        stage_index = context.current_position + 2
-        if context.loop:
-            stage_index = stage_index % len(context.stages)
-        try:
-            return StageRefOutput(
-                context.stages[stage_index],
-                stage_index
-            )
-        except IndexError:  # allow Pipeline to exit via StageRef
-            return StageRefOutput(
-                "",
-                stage_index
-            )
 
 
 def StageById(stage_id: str) -> StageRef:
