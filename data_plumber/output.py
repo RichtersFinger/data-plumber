@@ -9,8 +9,30 @@ from typing import TypeAlias, Any, Optional
 from dataclasses import dataclass
 
 
-_StageRecord: TypeAlias = tuple[str, str, int]
-"""Tuple of `Stage`-identifier and evaluated message and status."""
+@dataclass
+class _StageRecord:
+    """
+    Record of a `Stage`'s execution result.
+
+    Keyword arguments:
+    index -- position in `Pipeline`'s list of `Stage`s
+    id_ -- `Stage` identifier (in `Pipeline`)
+    message -- string returned by `Stage`'s `message`-`Callable`
+    status -- int returned by `Stage`'s `status`-`Callable`
+    """
+    index: int
+    id_: str
+    message: str
+    status: int
+
+    def prune(self) -> "StageRecord":
+        """
+        Returns pruned `_StageRecord` containing only message and
+        status.
+        """
+        return (self.message, self.status)
+
+
 StageRecord: TypeAlias = tuple[str, int]
 """Tuple of message and status from a `Stage`'s-evaluation."""
 

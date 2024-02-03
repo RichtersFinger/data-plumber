@@ -5,23 +5,11 @@ This module defines classes for referencing and handling of flow-logic
 in a `Pipeline.run`.
 """
 
-from typing import Optional
 import abc
 from dataclasses import dataclass
 
 from .context import PipelineContext
 from .error import PipelineError
-from .output import _StageRecord
-
-
-def _get_next_stageref(context: PipelineContext, id_: str) \
-        -> Optional[_StageRecord]:
-    """Helper to get most recent `_StageRecord` of 'future'-`Stage`."""
-    return next(
-        (stage for _, stage in enumerate(reversed(context.records))
-            if stage[0] == id_),
-        None
-    )
 
 
 @dataclass
@@ -31,17 +19,10 @@ class StageRefOutput:
 
     Properties:
     stage -- string identifier of the referenced `Stage`
-             (required)
-    relative_index -- relative position in execution order
-                      * if positive, follows context.stages
-                      * if negative, follows context.records
-                      (required)
-    status -- most recent status value from the referenced `Stage`
-              (optional; `None` implies 'not executed yet')
+    index -- absolte position in execution order (stages)
     """
     stage: str
-    relative_index: int
-    status: Optional[int] = None
+    index: int
 
 
 class StageRef(metaclass=abc.ABCMeta):
@@ -51,13 +32,21 @@ class StageRef(metaclass=abc.ABCMeta):
     intended for explicit use.
     """
 
+    STAGEREF_ERROR_MSG = \
+        "Unable to resolve StageRef {target}{location} in Pipeline with " \
+        + "stages {stages}. Records until error: {records}"
+
     @staticmethod
+    def _format_records(records) -> str:
+        return ' > '.join(map(str, records))
+
+    @classmethod
     @abc.abstractmethod
-    def get(context: PipelineContext) -> Optional[StageRefOutput]:
+    def get(cls, context: PipelineContext) -> StageRefOutput:
         """
         Returns a `StageRefOutput` that given information on what is to
         be executed next. If this reference cannot be resolved within
-        the given context, the value `None` is returned.
+        the given context, a `PipelineError` is raised.
 
         Keyword arguments:
         context -- `Pipeline` execution context
@@ -68,101 +57,132 @@ class StageRef(metaclass=abc.ABCMeta):
 class Previous(StageRef):
     """Reference to the previous `Stage` during `Pipeline` execution."""
 
-    @staticmethod
-    def get(context: PipelineContext) -> Optional[StageRefOutput]:
+    @classmethod
+    def get(cls, context: PipelineContext) -> StageRefOutput:
         if len(context.records) == 0:
-            return None
+            raise PipelineError(
+                cls.STAGEREF_ERROR_MSG.format(
+                    target="'Previous' ",
+                    location=f"at index {str(context.current_position)}",
+                    stages=str(context.stages),
+                    records=cls._format_records(context.records)
+                )
+            )
         return StageRefOutput(
-            context.records[-1][0],
-            -1,
-            context.records[-1][2]
+            context.records[-1].id_,
+            context.records[-1].index
         )
 
 
 class First(StageRef):
     """Reference to the first `Stage` during `Pipeline` execution."""
 
-    @staticmethod
-    def get(context: PipelineContext) -> Optional[StageRefOutput]:
+    @classmethod
+    def get(cls, context: PipelineContext) -> StageRefOutput:
         if len(context.records) == 0:
-            return None
+            raise PipelineError(
+                cls.STAGEREF_ERROR_MSG.format(
+                    target="'First' ",
+                    location=f"at index {str(context.current_position)}",
+                    stages=str(context.stages),
+                    records=cls._format_records(context.records)
+                )
+            )
         return StageRefOutput(
-            context.records[0][0],
-            -context.current_position,
-            context.records[0][2]
+            context.records[0].id_,
+            context.records[0].index
         )
 
 
 class Last(StageRef):
     """Reference to the last `Stage` of registered `Stage`s in `Pipeline`."""
 
-    @staticmethod
-    def get(context: PipelineContext) -> Optional[StageRefOutput]:
+    @classmethod
+    def get(cls, context: PipelineContext) -> StageRefOutput:
+        if len(context.stages) == 0:
+            raise PipelineError(
+                cls.STAGEREF_ERROR_MSG.format(
+                    target="'Last' ",
+                    location="",
+                    stages=str(context.stages),
+                    records=cls._format_records(context.records)
+                )
+            )
         return StageRefOutput(
             context.stages[-1],
-            len(context.stages) - 1 - context.current_position,
-            x[2] if (x := _get_next_stageref(context, context.stages[-1]))
-                else None
+            len(context.stages) - 1
         )
 
 
 class Next(StageRef):
     """Reference to the next `Stage` of registered `Stage`s in `Pipeline`."""
 
-    @staticmethod
-    def get(context: PipelineContext) -> Optional[StageRefOutput]:
-        if context.current_position + 1 >= len(context.stages):
-            return StageRefOutput("", 1, None)
-        identifier = context.stages[context.current_position + 1]
-        return StageRefOutput(
-            identifier,
-            1,
-            x[2] if (x := _get_next_stageref(context, identifier))
-                else None
-        )
+    @classmethod
+    def get(cls, context: PipelineContext) -> StageRefOutput:
+        stage_index = context.current_position + 1
+        if context.loop:
+            stage_index = stage_index % len(context.stages)
+        try:
+            return StageRefOutput(
+                context.stages[stage_index],
+                stage_index
+            )
+        except IndexError:  # allow Pipeline to exit via StageRef
+            return StageRefOutput(
+                "",
+                stage_index
+            )
 
 
 class Skip(StageRef):
     """Reference to the `Stage` after next of registered `Stage`s in `Pipeline`."""
 
-    @staticmethod
-    def get(context: PipelineContext) -> Optional[StageRefOutput]:
-        if context.current_position + 2 >= len(context.stages):
-            return StageRefOutput("", 2, None)
-        identifier = context.stages[context.current_position + 2]
-        return StageRefOutput(
-            identifier,
-            2,
-            x[2] if (x := _get_next_stageref(context, identifier))
-                else None
-        )
+    @classmethod
+    def get(cls, context: PipelineContext) -> StageRefOutput:
+        stage_index = context.current_position + 2
+        if context.loop:
+            stage_index = stage_index % len(context.stages)
+        try:
+            return StageRefOutput(
+                context.stages[stage_index],
+                stage_index
+            )
+        except IndexError:  # allow Pipeline to exit via StageRef
+            return StageRefOutput(
+                "",
+                stage_index
+            )
 
 
 def StageById(stage_id: str) -> StageRef:
     """
-    Reference to the `Stage` with its id.
+    Reference to a `Stage` with its id. (First occurrence in
+    `Pipeline`'s list of `Stage`s.)
 
     Keyword arguments:
     stage_id -- stage id
     """
 
     class _(StageRef):
-        @staticmethod
-        def get(context: PipelineContext) -> Optional[StageRefOutput]:
+        @classmethod
+        def get(cls, context: PipelineContext) -> StageRefOutput:
             try:
                 index = context.stages.index(stage_id)
             except ValueError as exc:
                 raise PipelineError(
-                    f"Unable to resolve StageRef to id '{stage_id}' in Pipeline with stages {str(context.stages)}. "
-                    + f"Records until error: {' > '.join(map(str, context.records))}"
+                    cls.STAGEREF_ERROR_MSG.format(
+                        target=f"to id '{stage_id}'",
+                        location="",
+                        stages=str(context.stages),
+                        records=cls._format_records(context.records)
+                    )
                 ) from exc
             return StageRefOutput(
                 stage_id,
-                index - context.current_position,
-                x[2] if (x := _get_next_stageref(context, stage_id))
-                    else None
+                index
             )
-    _.__doc__ = f"Reference to a `Stage` by the id {stage_id}."
+    _.__doc__ = f"Reference to a `Stage` by the id '{stage_id}'. " \
+        + "(First occurrence in `Pipeline`'s list of `Stage`s.)"
 
     return _
 
@@ -176,22 +196,24 @@ def StageByIndex(stage_index: int) -> StageRef:
     """
 
     class _(StageRef):
-        @staticmethod
-        def get(context: PipelineContext) -> Optional[StageRefOutput]:
+        @classmethod
+        def get(cls, context: PipelineContext) -> StageRefOutput:
             try:
                 stage_id = context.stages[stage_index]
             except IndexError as exc:
                 raise PipelineError(
-                    f"Unable to resolve StageRef to index '{str(stage_index)}' in Pipeline with stages {str(context.stages)}. "
-                    + f"Records until error: {' > '.join(map(str, context.records))}"
+                    cls.STAGEREF_ERROR_MSG.format(
+                        target=f"to index '{str(stage_index)}'",
+                        location="",
+                        stages=str(context.stages),
+                        records=cls._format_records(context.records)
+                    )
                 ) from exc
             return StageRefOutput(
                 stage_id,
-                stage_index - context.current_position,
-                x[2] if (x := _get_next_stageref(context, stage_id))
-                    else None
+                stage_index
             )
-    _.__doc__ = f"Reference to a `Stage` by its index {str(stage_index)}."
+    _.__doc__ = f"Reference to a `Stage` by its index of {str(stage_index)}."
 
     return _
 
@@ -205,8 +227,8 @@ def StageByIncrement(index_increment: int) -> StageRef:
     """
 
     class _(StageRef):
-        @staticmethod
-        def get(context: PipelineContext) -> Optional[StageRefOutput]:
+        @classmethod
+        def get(cls, context: PipelineContext) -> StageRefOutput:
             stage_index = context.current_position + index_increment
             try:
                 if context.loop:
@@ -214,19 +236,22 @@ def StageByIncrement(index_increment: int) -> StageRef:
                 else:
                     if stage_index < 0:
                         raise IndexError(
-                            f"Bad index '{stage_index}' in non-looping Pipeline."
+                            f"Bad index '{stage_index}' in StageRef of non-looping Pipeline."
                         )
                 stage_id = context.stages[stage_index]
             except IndexError as exc:
                 raise PipelineError(
-                    f"Unable to resolve StageRef to index '{str(stage_index)}' in Pipeline with stages {str(context.stages)}. "
-                    + f"Records until error: {' > '.join(map(str, context.records))}"
+                    cls.STAGEREF_ERROR_MSG.format(
+                        target=f"to index '{str(stage_index)}'",
+                        location=f" (increment '{str(index_increment)}' from "
+                            + f"'{str(context.current_position)}')",
+                        stages=str(context.stages),
+                        records=cls._format_records(context.records)
+                    )
                 ) from exc
             return StageRefOutput(
                 stage_id,
-                index_increment,
-                x[2] if (x := _get_next_stageref(context, stage_id))
-                    else None
+                stage_index
             )
     _.__doc__ = f"Reference to a `Stage` by a relative index of {str(index_increment)}."
 
