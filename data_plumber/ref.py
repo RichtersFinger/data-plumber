@@ -5,6 +5,7 @@ This module defines classes for referencing and handling of flow-logic
 in a `Pipeline.run`.
 """
 
+from typing import TypeAlias
 import abc
 from dataclasses import dataclass
 
@@ -25,7 +26,7 @@ class StageRefOutput:
     index: int
 
 
-class StageRef(metaclass=abc.ABCMeta):
+class _StageRef(metaclass=abc.ABCMeta):
     """
     Base class enabling the definition of references to certain `Stage`s
     when executing a `Pipeline`. Only child-classes of this class are
@@ -54,7 +55,11 @@ class StageRef(metaclass=abc.ABCMeta):
         raise NotImplementedError("Missing definition of StageRef.get.")
 
 
-class Previous(StageRef):
+StageRef: TypeAlias = type[_StageRef]
+"""TypeAlias for type of _StageRef: type[_StageRef]"""
+
+
+class Previous(_StageRef):
     """Reference to the previous `Stage` during `Pipeline` execution."""
 
     @classmethod
@@ -74,7 +79,7 @@ class Previous(StageRef):
         )
 
 
-class First(StageRef):
+class First(_StageRef):
     """Reference to the first `Stage` during `Pipeline` execution."""
 
     @classmethod
@@ -94,7 +99,7 @@ class First(StageRef):
         )
 
 
-class Last(StageRef):
+class Last(_StageRef):
     """Reference to the last `Stage` of registered `Stage`s in `Pipeline`."""
 
     @classmethod
@@ -114,7 +119,7 @@ class Last(StageRef):
         )
 
 
-class Next(StageRef):
+class Next(_StageRef):
     """Reference to the next `Stage` of registered `Stage`s in `Pipeline`."""
 
     @classmethod
@@ -134,7 +139,7 @@ class Next(StageRef):
             )
 
 
-class Skip(StageRef):
+class Skip(_StageRef):
     """Reference to the `Stage` after next of registered `Stage`s in `Pipeline`."""
 
     @classmethod
@@ -163,7 +168,7 @@ def StageById(stage_id: str) -> StageRef:
     stage_id -- stage id
     """
 
-    class _(StageRef):
+    class _(_StageRef):
         @classmethod
         def get(cls, context: PipelineContext) -> StageRefOutput:
             try:
@@ -195,7 +200,7 @@ def StageByIndex(stage_index: int) -> StageRef:
     stage_index -- absolute index
     """
 
-    class _(StageRef):
+    class _(_StageRef):
         @classmethod
         def get(cls, context: PipelineContext) -> StageRefOutput:
             try:
@@ -226,7 +231,7 @@ def StageByIncrement(index_increment: int) -> StageRef:
     index_increment -- relative index
     """
 
-    class _(StageRef):
+    class _(_StageRef):
         @classmethod
         def get(cls, context: PipelineContext) -> StageRefOutput:
             stage_index = context.current_position + index_increment

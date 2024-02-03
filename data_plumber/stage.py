@@ -98,7 +98,7 @@ class Stage:
 
     @property
     def requires(self) -> Optional[
-        dict[StageRef | str, int | Callable[[int], bool]]
+        dict[StageRef, int | Callable[[int], bool]]
     ]:
         """Returns a `Stage`'s requirements."""
         return self._requires
