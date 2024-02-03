@@ -106,7 +106,8 @@ class Pipeline:
                 # this Stage does not exist or has not been executed
                 raise PipelineError(
                     f"Referenced Stage '{ref_output.stage}' (required by Stage"
-                    + f" '{_s}') has not been executed yet."
+                    + f" '{_s}') has not been executed yet. "
+                    + f"Records until error: {context.records}"
                 )
             if callable(req):
                 if not req(status=match_status):  # type: ignore[call-arg]
@@ -124,14 +125,15 @@ class Pipeline:
         return index
 
     def _validate_external_kwargs(self, **kwargs):
+        reserved_words = ["out", "primer", "status", "count"]
         # check for reserved kwargs
         if (bad_kwarg := next(
-            (p for p in kwargs if p in ["out", "primer", "status", "count"]),
+            (p for p in kwargs if p in reserved_words),
             None
         )):
             raise PipelineError(
                 f"Keyword '{bad_kwarg}' is reserved in the context of a "
-                + "'Pipeline.run'-command."
+                + f"'Pipeline.run'-command. (Reserved words: {reserved_words})"
             )
 
     @property
@@ -174,8 +176,8 @@ class Pipeline:
                 s = self._stage_catalog[_s]
             except KeyError as exc:
                 raise PipelineError(
-                    f"Unable to resolve reference to Stage '{_s}' at stage #{str(stage_count)}. "
-                    + f"Records until error: {', '.join(map(str, records))}"
+                    f"Unable to resolve reference to Stage id '{_s}' in Pipeline with " \
+                    + f"stages {self._pipeline}. Records until error: {records}"
                 ) from exc
             if isinstance(s, Fork):
                 # ##########
