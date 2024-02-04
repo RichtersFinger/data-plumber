@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.X.0] - 2024-02-04
+
+### Changed
+
+- added common base class `_PipelineComponent` for `Pipeline` components `Stage` and `Fork` (`f628159`)
+
+### Added
+
+- `Pipeline` now supports `in`-operator (usable with either component directly or its name/id) (`5701073`)
+- added requirements for `Pipeline` to be unpacked as mapping (`b2db8fa`)
+
+### Fixed
+
+- fixed issue where `Fork`-object were internally not registered by their id (`b267ca4`)
+
 ## [1.8.0] - 2024-02-03
 
 ### Changed
