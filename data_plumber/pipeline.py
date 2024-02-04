@@ -102,6 +102,14 @@ class Pipeline:
             ref_output = ref.get(
                 context
             )
+            if not isinstance(self._stage_catalog[ref_output.stage], Stage):
+                # only other Stages can be referenced with requirements
+                raise PipelineError(
+                    f"Referenced Component '{ref_output.stage}' (required by"
+                    + f" Stage '{_s}') is not of type 'Stage' but '"
+                    + type(self._stage_catalog[ref_output.stage]).__name__
+                    + f"'. Records until error: {context.records}"
+                )
             # get latest status of that Stage
             match_status = next(
                 (stage.status for stage in reversed(context.records)

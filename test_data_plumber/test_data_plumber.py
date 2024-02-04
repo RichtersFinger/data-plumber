@@ -16,7 +16,9 @@ pytest -v -s --cov=data_plumber.array \
 import pytest
 from data_plumber \
     import Pipeline, Stage, Previous, First, Last, Next, Skip, Fork, \
-        StageById, StageByIndex, StageByIncrement, PipelineError, Pipearray
+        PreviousN, NextN, StageById, StageByIndex, StageByIncrement, \
+        PipelineError, Pipearray
+from data_plumber.context import PipelineContext
 from data_plumber.output import PipelineOutput
 
 
@@ -548,6 +550,20 @@ def test_stage_pipeline_addition_multiple():
     assert len(output_c.records) == 4
 
 
+def test_stage_addition_exception():
+    """
+    Test method `__add__` for classes `Stage`/`Pipeline` with bad types.
+    """
+
+    # Stage
+    with pytest.raises(TypeError):
+        Stage() + 1
+
+    # Pipeline
+    with pytest.raises(TypeError):
+        (Stage() + Stage()) + 1
+
+
 # #############################
 # ### Stage.primer
 
@@ -721,6 +737,64 @@ def test_pipeline_run_stage_requires_byid(status, out):
     ).run()
 
     assert output.data == out
+
+
+@pytest.mark.parametrize(
+    ("status", "out"),
+    [
+        (0, {"stage1": 0, "stage2": 0}),
+        (1, {"stage1": 1}),
+    ],
+    ids=["requirements_met", "requirements_not_met"]
+)
+def test_pipeline_run_stage_requires_byint(status, out):
+    """
+    Test `requires`-property of `Stage` with reference as integer.
+    """
+
+    output = Pipeline(
+        "a", "b",
+        a=Stage(
+            action=lambda out, **kwargs: out.update({"stage1": status}),
+            status=lambda **kwargs: status
+        ),
+        b=Stage(
+            requires={-1: 0},
+            action=lambda out, **kwargs: out.update({"stage2": 0})
+        ),
+    ).run()
+
+    assert output.data == out
+
+
+def test_pipeline_run_stage_requires_exception_no_status():
+    """
+    Test `requires`-property of `Stage` with reference to not yet
+    executed `Stage`
+    """
+
+    with pytest.raises(PipelineError):
+        Pipeline(
+            Stage(
+                requires={Next: 1}
+            ),
+            Stage(),
+        ).run()
+
+
+def test_pipeline_run_stage_requires_exception_bad_type():
+    """
+    Test `requires`-property of `Stage` with reference to not yet
+    executed `Stage`
+    """
+
+    with pytest.raises(PipelineError):
+        Pipeline(
+            Stage(
+                requires={Next: 1}
+            ),
+            Fork(lambda **kwargs: None),
+        ).run()
 
 
 # #############################
@@ -1108,3 +1182,57 @@ def test_pipearray_run_mixed():
         assert isinstance(_output, PipelineOutput)
     assert output[pipeline_a.id].records[0][1] == 0
     assert output["b"].records[0][1] == 1
+
+
+# #############################
+# ### _StageRef
+
+def test_previousn_error():
+    """Test function `PreviousN` with bad argument."""
+
+    with pytest.raises(ValueError):
+        PreviousN(-1)
+
+
+def test_nextn_error():
+    """Test function `NextN` with bad argument."""
+
+    with pytest.raises(ValueError):
+        NextN(-1)
+
+
+@pytest.mark.parametrize(
+    "stageref",
+    [
+        Previous,
+        First,
+        Last,
+        StageByIndex(1),
+        StageById("a"),
+        StageByIncrement(1),
+        StageByIncrement(-1),
+    ]
+)
+def test_previous_get_error(stageref):
+    """Test method get for different `_StageRef`s with bad context."""
+
+    with pytest.raises(PipelineError):
+        stageref.get(PipelineContext([], 0, False, [], {}, {}, 0))
+
+
+@pytest.mark.parametrize(
+    "stageref",
+    [
+        Next,
+        StageByIncrement(1),
+        StageByIncrement(-3),
+    ]
+)
+def test_next_loop(stageref):
+    """Test method `get` for different `_StageRef`s in loop-context."""
+
+    ref = stageref.get(PipelineContext(
+        ["a", "b"], 1, True, [], {}, {}, 0)
+    )
+
+    assert ref.index == 0

@@ -43,7 +43,7 @@ class _StageRef(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def get(cls, context: PipelineContext) -> StageRefOutput:
+    def get(cls, context: PipelineContext) -> StageRefOutput:  # pragma: no cover
         """
         Returns a `StageRefOutput` that given information on what is to
         be executed next. If this reference cannot be resolved within
