@@ -13,8 +13,12 @@ long_description = \
 # read documentation and append to long_description
 docs_files = [
     {"file": "overview.md", "ref": "overview", "title": "Overview", "value": ""},
-    {"file": "stage.md", "ref": "stage", "title": "Stage", "value": ""},
     {"file": "pipeline.md", "ref": "pipeline", "title": "Pipeline", "value": ""},
+    {"file": "stage.md", "ref": "stage", "title": "Stage", "value": ""},
+    {"file": "fork.md", "ref": "fork", "title": "Fork", "value": ""},
+    {"file": "stageref.md", "ref": "stageref", "title": "StageRef", "value": ""},
+    {"file": "output.md", "ref": "pipelineoutput", "title": "PipelineOutput", "value": ""},
+    {"file": "array.md", "ref": "pipearray", "title": "Pipearray", "value": ""},
 ]
 for doc in docs_files:
     doc["value"] = \
