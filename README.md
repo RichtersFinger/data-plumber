@@ -41,14 +41,14 @@ a list of integer numbers. A suitable pipeline might look like this
         ),
         exit_on_status=1
     )
->>> pipeline.run().stages
-[('missing argument', 1)]
->>> pipeline.run(data=1).stages
-[('', 0), ('bad type', 1)]
->>> pipeline.run(data=[1, "2", 3]).stages
-[('', 0), ('', 0), ('bad type in data', 1)]
->>> pipeline.run(data=[1, 2, 3]).stages
-[('', 0), ('', 0), ('validation success', 0)]
+>>> pipeline.run().last_message
+'missing argument'
+>>> pipeline.run(data=1).last_message
+'bad type'
+>>> pipeline.run(data=[1, "2", 3]).last_message
+'bad type in data'
+>>> pipeline.run(data=[1, 2, 3]).last_message
+'validation success'
 ```
 
 ## Install
