@@ -457,6 +457,73 @@ def test_pipeline_insert(stage_or_pipeline):
     assert output.data == [1, 0, 1]
 
 
+def test_pipeline_append_named():
+    """
+    Test extension method `append` of `Pipeline` with named `Stage`s.
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, **kwargs: out.append(1)
+        ),
+        initialize_output=lambda: []
+    )
+
+    pipeline.append(
+        "a",
+        a=Stage(
+            action=lambda out, **kwargs: out.append(0)
+        ),
+    )
+
+    assert pipeline.run().data == [1, 0]
+
+
+def test_pipeline_prepend_named():
+    """
+    Test extension method `prepend` of `Pipeline` with named `Stage`s.
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, **kwargs: out.append(1)
+        ),
+        initialize_output=lambda: []
+    )
+
+    pipeline.prepend(
+        "a",
+        a=Stage(
+            action=lambda out, **kwargs: out.append(0)
+        ),
+    )
+
+    assert pipeline.run().data == [0, 1]
+
+
+def test_pipeline_insert_named():
+    """
+    Test extension method `insert` of `Pipeline` with named `Stage`s.
+    """
+
+    pipeline = Pipeline(
+        Stage(
+            action=lambda out, **kwargs: out.append(1)
+        ),
+        initialize_output=lambda: []
+    )
+
+    pipeline.insert(
+        0,
+        "a",
+        a=Stage(
+            action=lambda out, **kwargs: out.append(0)
+        ),
+    )
+
+    assert pipeline.run().data == [0, 1]
+
+
 # #############################
 # ### Pipeline unpacking
 

@@ -38,7 +38,7 @@ Note that when adding to existing `Pipeline`s, the change is made in-place.
 Consequently, only properties of the first argument are inherited (refer to python's operator precedence). Therefore, the use of this operation in combination with `Pipeline`s requires caution.
 
 #### Building named Pipelines
-Instead of simply providing the individual `PipelineComponents` as positional arguments during instantiation, they can be assigned names by providing components as keyword arguments (kwargs) at instantiation. In addition to the kwargs, the positional arguments are still required to determine the order of operations for the `Pipeline`. These are then given by the `PipelineComponent`'s name:
+Instead of simply providing the individual `PipelineComponents` as positional arguments during instantiation, they can be assigned names by providing components as keyword arguments (kwargs). In addition to the kwargs, the positional arguments are still required to determine the order of operations for the `Pipeline`. These are then given by the `PipelineComponent`'s name:
 ```
 >>> Pipeline(
     "a", "b", "a", "c",

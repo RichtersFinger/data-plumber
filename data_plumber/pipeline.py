@@ -315,30 +315,50 @@ class Pipeline:
             return wrapped
         return decorator
 
-    def append(self, element: "str | _PipelineComponent | Pipeline") -> None:
-        """Append `element` to the `Pipeline`."""
+    def append(
+        self,
+        element: "str | _PipelineComponent | Pipeline",
+        **kwargs: _PipelineComponent
+    ) -> None:
+        """
+        Append `element` to the `Pipeline`. Use `kwargs` to define
+        names.
+        """
         if isinstance(element, Pipeline):
             self._update_catalog(**element.catalog)
             self._pipeline = self._pipeline + element.stages
             return
         self._update_catalog(element)
+        self._update_catalog(**kwargs)
         self._pipeline.append(str(element))
 
-    def prepend(self, element: "str | _PipelineComponent | Pipeline") -> None:
-        """Prepend `element` to the `Pipeline`."""
+    def prepend(
+        self,
+        element: "str | _PipelineComponent | Pipeline",
+        **kwargs: _PipelineComponent
+    ) -> None:
+        """
+        Prepend `element` to the `Pipeline`. Use `kwargs` to define
+        names.
+        """
         if isinstance(element, Pipeline):
             self._update_catalog(**element.catalog)
             self._pipeline = element.stages + self._pipeline
             return
         self._update_catalog(element)
+        self._update_catalog(**kwargs)
         self._pipeline.insert(0, str(element))
 
     def insert(
         self,
         index: int,
-        element: "str | _PipelineComponent | Pipeline"
+        element: "str | _PipelineComponent | Pipeline",
+        **kwargs: _PipelineComponent
     ) -> None:
-        """Insert `element` into the `Pipeline` at `index`."""
+        """
+        Insert `element` into the `Pipeline` at `index`. Use `kwargs` to
+        define names.
+        """
         if isinstance(element, Pipeline):
             self._update_catalog(**element.catalog)
             self._pipeline = self._pipeline[:index] \
@@ -346,6 +366,7 @@ class Pipeline:
                 + self._pipeline[index:]
             return
         self._update_catalog(element)
+        self._update_catalog(**kwargs)
         self._pipeline.insert(index, str(element))
 
     def __add__(self, other):
