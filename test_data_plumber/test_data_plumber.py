@@ -475,6 +475,27 @@ def test_pipeline_unpacking():
     assert y == stage_b
 
 
+def test_pipeline_unpacking_mapping():
+    """Test method `__iter__` for class `Pipeline`."""
+
+    stage_a = Stage(
+        action=lambda out, **kwargs: out.append("stage_a")
+    )
+    stage_b = Stage(
+        action=lambda out, **kwargs: out.append("stage_b")
+    )
+
+    pipeline = Pipeline("a", "b", a=stage_a, b=stage_b)
+
+    output = Pipeline(
+        "b", "a",
+        **pipeline,
+        initialize_output=lambda: []
+    ).run()
+
+    assert output.data == ["stage_b", "stage_a"]
+
+
 # #############################
 # ### Pipeline/Stage.addition
 

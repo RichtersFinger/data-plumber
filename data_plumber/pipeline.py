@@ -336,6 +336,12 @@ class Pipeline:
         self.append(other)
         return self
 
+    def keys(self):
+        return self._stage_catalog.keys()
+
+    def __getitem__(self, key):
+        return self._stage_catalog[key]
+
     def __iter__(self) -> Iterator[Stage | Fork]:
         for s in self._pipeline:
             yield self._stage_catalog[s]
