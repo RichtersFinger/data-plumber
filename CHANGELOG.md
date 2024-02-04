@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.11.0] - 2024-02-04
+
+### Changed
+
+- added common base class `_PipelineComponent` for `Pipeline` components `Stage` and `Fork` (`f628159`)
+
+### Added
+
+- added docs to package metadata (`061e311`)
+- names for `PipelineComponents` can now be declared in extension methods (`append`, `prepend`, ...) (`8363284`)
+- `Pipeline` now supports `in`-operator (usable with either component directly or its name/id) (`5701073`)
+- added requirements for `Pipeline` to be unpacked as mapping (`b2db8fa`)
+
+### Fixed
+
+- fixed issue where `Fork`-objects were internally not registered by their id (`b267ca4`)
+
 ## [1.8.0] - 2024-02-03
 
 ### Changed
@@ -28,7 +45,7 @@
 
 ### Fixed
 
-- `PipelineOutput.last_X`-methods now return `None` in case of empty records (``)
+- `PipelineOutput.last_X`-methods now return `None` in case of empty records (`b7a6ba1`)
 
 ## [1.0.0] - 2024-01-31
 

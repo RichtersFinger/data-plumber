@@ -6,12 +6,12 @@ a `Pipeline`.
 """
 
 from typing import Optional, Callable, Any
-from uuid import uuid4
 
+from .component import _PipelineComponent
 from .ref import StageRef, StageById, StageByIncrement
 
 
-class Stage:
+class Stage(_PipelineComponent):
     """
     A `Stage` represents a single building block in the processing logic
     of a `Pipeline`. The set of arguments which are passed to a
@@ -103,12 +103,7 @@ class Stage:
             self._export = export  # type: ignore[assignment]
         self._status = status
         self._message = message
-        self._id = str(uuid4())
-
-    @property
-    def id(self) -> str:
-        """Returns a `Stage`'s `id`."""
-        return self._id
+        super().__init__()
 
     @property
     def requires(self) -> Optional[
@@ -141,19 +136,3 @@ class Stage:
     def message(self) -> Callable[..., str]:
         """Returns a `Stage`'s `message` callable."""
         return self._message
-
-    def __add__(self, other):
-        # import here to prevent circular import
-        from .pipeline import Pipeline
-        if not isinstance(other, Stage) and not isinstance(other, Pipeline):
-            raise TypeError(
-                "Incompatible type, expected 'Stage' or 'Pipeline' "
-                    f"not '{type(other).__name__}'."
-            )
-        if isinstance(other, Stage):
-            return Pipeline(self, other)
-        other.prepend(self)
-        return other
-
-    def __str__(self):
-        return self._id

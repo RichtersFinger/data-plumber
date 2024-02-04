@@ -8,7 +8,13 @@ enable more complex (i.e. non-linear) orders of execution. Pipelines can also
 be collected into arrays that can be executed at once with the same input
 data.
 
-## Minimal usage example
+## Contents
+1. [Usage Example](#usage-example)
+1. [Install](#install)
+1. [Documentation](#documentation)
+1. [Changelog](CHANGELOG.md)
+
+## Usage example
 Consider a scenario where the contents of a dictionary have to be validated
 and a suitable error message has to be generated. Specifically, a valid input-
 dictionary is expected to have a key "data" with the respective value being
@@ -19,7 +25,7 @@ a list of integer numbers. A suitable pipeline might look like this
         Stage(
             primer=lambda **kwargs: "data" in kwargs,
             status=lambda primer, **kwargs: 0 if primer else 1,
-            message=lambda primer, **kwargs: "" if primer else "missing key"
+            message=lambda primer, **kwargs: "" if primer else "missing argument"
         ),
         Stage(
             requires={Previous: 0},
@@ -35,12 +41,29 @@ a list of integer numbers. A suitable pipeline might look like this
         ),
         exit_on_status=1
     )
->>> pipeline.run(**{}).stages
-[('missing key', 1)]
->>> pipeline.run(**{"data": 1}).stages
+>>> pipeline.run().stages
+[('missing argument', 1)]
+>>> pipeline.run(data=1).stages
 [('', 0), ('bad type', 1)]
->>> pipeline.run(**{"data": [1, "2", 3]}).stages
+>>> pipeline.run(data=[1, "2", 3]).stages
 [('', 0), ('', 0), ('bad type in data', 1)]
->>> pipeline.run(**{"data": [1, 2, 3]}).stages
+>>> pipeline.run(data=[1, 2, 3]).stages
 [('', 0), ('', 0), ('validation success', 0)]
 ```
+
+## Install
+Install using `pip` with
+```
+pip install data-plumber
+```
+Consider installing in a virtual environment.
+
+## Documentation
+
+* [Overview](docs/overview.md)
+* [Pipeline](docs/pipeline.md)
+* [Stage](docs/stage.md)
+* [Fork](docs/fork.md)
+* [StageRef](docs/stageref.md)
+* [PipelineOutput](docs/output.md)
+* [Pipearray](docs/array.md)

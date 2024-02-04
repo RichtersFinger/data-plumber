@@ -27,4 +27,4 @@ jobs:
         pip install .
     - name: Test with pytest
       run: |
-        pytest -v -s --cov=data_plumber.array --cov=data_plumber.context --cov=data_plumber.error --cov=data_plumber.fork --cov=data_plumber.output --cov=data_plumber.pipeline --cov=data_plumber.ref --cov=data_plumber.stage
+        pytest -v -s --cov=data_plumber.array --cov=data_plumber.context --cov=data_plumber.component --cov=data_plumber.error --cov=data_plumber.fork --cov=data_plumber.output --cov=data_plumber.pipeline --cov=data_plumber.ref --cov=data_plumber.stage
