@@ -9,12 +9,12 @@ be collected into arrays that can be executed at once with the same input
 data.
 
 ## Contents
-1. [Minimal Exampe](#minimal-usage-example)
+1. [Usage Example](#usage-example)
 1. [Install](#install)
 1. [Documentation](#documentation)
 1. [Changelog](CHANGELOG.md)
 
-## Minimal usage example
+## Usage example
 Consider a scenario where the contents of a dictionary have to be validated
 and a suitable error message has to be generated. Specifically, a valid input-
 dictionary is expected to have a key "data" with the respective value being
