@@ -76,3 +76,6 @@ class Fork:
             return StageByIncrement(result)
         # otherwise it is either a StageRef already or None
         return result
+
+    def __str__(self):
+        return self._id
