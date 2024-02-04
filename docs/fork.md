@@ -13,3 +13,23 @@ A `Fork` takes a single `Callable` as argument. Based on the properties describe
 * string; a `PipelineComponent`'s string identifier in the context of a `Pipeline.run`
 * `StageRef`; a more abstract form of reference, e.g. `First`, `Ǹext` (see `StageRef` for details)
 * `None`; signal to (normally) exit `Pipeline.run`
+
+#### Example
+  ```
+  >>> from data_plumber import Pipeline, Stage, Fork, Next
+  >>> p = Pipeline(
+        Stage(
+          message=lambda **kwargs: "stage 1 executed"
+        ),
+        Fork(
+          lambda **kwargs: Next if "arg" in kwargs else None
+        ),
+        Stage(
+          message=lambda **kwargs: "stage 2 executed"
+        ),
+      )
+  >>> p.run(arg=0).last_message
+  'stage 2 executed'
+  >>> p.run().last_message
+  'stage 1 executed'
+  ```

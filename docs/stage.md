@@ -17,18 +17,65 @@ A `Stage` represents a single building block in the processing logic of a `Pipel
 
   values are either an integer or a `Callable` taking the status as an argument and returning a `bool` (if it evaluates to `True`, the `Stage`-requirement is met)
 
+  ```
+  >>> from data_plumber import Pipeline, Stage, Previous
+  >>> Pipeline(
+        Stage(
+          message=lambda **kwargs: "first stage",
+          status=lambda **kwargs: 1
+        ),
+        Stage(
+          requires={Previous: 0},
+          message=lambda **kwargs: "second stage"
+        ),
+      ).run().last_message
+  'first stage'
+  ```
+
 * **primer** `Callable` for pre-processing data
 
   (kwargs: `out`, `count`)
+
+  ```
+  >>> Pipeline(
+        Stage(
+          primer=lambda **kwargs: "primer value",
+          message=lambda primer, **kwargs: primer
+        ),
+      ).run().last_message
+  'primer value'
+  ```
 
 * **action** `Callable` for main-step of processing
 
   (kwargs: `out`, `primer`, `count`)
 
+  ```
+  >>> Pipeline(
+        Stage(
+          action=lambda out, **kwargs: out.update({"new_data": 0})
+        ),
+      ).run().data
+  {'new_data': 0}
+  ```
+
 * **export** `Callable` that returns a dictionary of additional kwargs to be exported to the parent `Pipeline`; in the following `Stage`s, these kwargs are then available as if they were provided with the `Pipeline.run`-command
 
   (kwargs: `out`, `primer`, `count`)
 
+  ```
+  >>> Pipeline(
+        Stage(
+          export=lambda **kwargs: {"new_arg": 0}
+        ),
+        Stage(
+          message=lambda **kwargs:
+            "export successful" if "new_arg" in kwargs
+            else "missing new_arg"
+        ),
+      ).run().last_message
+  'export successful'
+  ```
 * **status** `Callable` for generation of a `Stage`'s integer exit status
 
   (kwargs: `out`, `primer`, `count`)
