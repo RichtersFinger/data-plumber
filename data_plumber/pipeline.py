@@ -336,6 +336,11 @@ class Pipeline:
         self.append(other)
         return self
 
+    def __contains__(self, value):
+        return \
+            value in self._stage_catalog \
+            or value in self._stage_catalog.values()
+
     def keys(self):
         return self._stage_catalog.keys()
 
