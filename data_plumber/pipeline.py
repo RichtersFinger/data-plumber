@@ -9,6 +9,7 @@ from typing import Optional, Callable, Any, Iterator
 from functools import wraps
 from uuid import uuid4
 
+from .component import _PipelineComponent
 from .context import PipelineContext
 from .error import PipelineError
 from .output import _StageRecord, PipelineOutput
@@ -20,8 +21,8 @@ class Pipeline:
     """
     A `Pipeline` provides the core-functionality of the `data-plumber`-
     framework. `Pipeline`s can be defined either with (explicitly) named
-    `Stage`s or immediately by providing `Stage`s as positional
-    arguments.
+    `_PipelineComponent`s (`Stage` or `Fork`) or immediately by
+    providing `_PipelineComponent`s as positional arguments.
 
     Example usage:
      >>> from data_plumber import Pipeline, Stage, Fork
@@ -39,33 +40,34 @@ class Pipeline:
      <data_plumber.output.PipelineOutput object at ...>
 
     Keyword arguments:
-    args -- positional `Stage`s/`Fork`s referenced by id or explicit as
-            objects
-    kwargs -- assignment of custom identifiers for `Stage`s/`Fork`s used
-              in the positional section
+    args -- positional `_PipelineComponent`s referenced by id or
+            explicit as objects
+    kwargs -- assignment of custom identifiers for `_PipelineComponent`s
+              used in the positional section
     initialize_output -- generator for initial data of `Pipeline.run`s
                          (default lambda: {})
     finalize_output -- `Callable` that is executed after the execution
                        of `Pipeline.run` exits; gets passed the
                        `Pipeline`'s persistent `data`-object and `run`'s
-                       kwargs (see also docs of `Stage`)
+                       kwargs (see also docs of individual
+                       `_PipelineComponent`s)
                        (default None)
     exit_on_status -- stop `Pipeline` execution if
                       * any `Stage` returns this status (int)
                       * it returns `True` (Callable)
                       (default `None`)
-    loop -- if `True`, loop around and re-iterate `Stage`s after
-            completion of last `Stage` in `Pipeline`
+    loop -- if `True`, loop around and re-iterate `_PipelineComponent`s
+            after completion of last `_PipelineComponent` in `Pipeline`
             (default `False`)
     """
     def __init__(
         self,
-        *args: str | Stage | Fork,
+        *args: str | _PipelineComponent,
         initialize_output: Callable[..., Any] = lambda: {},
         finalize_output: Optional[Callable[..., Any]] = None,
         exit_on_status: Optional[int | Callable[[int], bool]] = None,
         loop: bool = False,
-        **kwargs: Stage | Fork
+        **kwargs: _PipelineComponent
     ) -> None:
         self._initialize_output = initialize_output
         self._finalize_output = finalize_output
@@ -75,11 +77,11 @@ class Pipeline:
         self._loop = loop
         self._id = str(uuid4())
 
-        # dictionary of Stages by Stage.id
-        self._stage_catalog: dict[str, Stage | Fork] = {}
+        # dictionary of PipelineComponents by their given name/id
+        self._stage_catalog: dict[str, _PipelineComponent] = {}
         self._update_catalog(*args, **kwargs)
 
-        # build actual pipeline with references to Stages|Forks
+        # build actual pipeline with references to PipelineComponents
         # from self._stage_catalog
         self._pipeline = list(map(str, args))
 
@@ -92,7 +94,10 @@ class Pipeline:
 
     def _meets_requirements(self, _s: str, context: PipelineContext) -> bool:
         s = self._stage_catalog[_s]
-        for ref, req in s.requires.items():  # type: ignore[union-attr]
+        assert isinstance(s, Stage)
+        if s.requires is None:
+            return True
+        for ref, req in s.requires.items():
             # get target Stage from StageRef
             ref_output = ref.get(
                 context
@@ -143,13 +148,19 @@ class Pipeline:
         return self._id
 
     @property
-    def catalog(self) -> dict[str, Stage | Fork]:
-        """Returns a (shallow) copy of the `Pipeline`'s `Stage`-catalog."""
+    def catalog(self) -> dict[str, _PipelineComponent]:
+        """
+        Returns a (shallow) copy of the `Pipeline`'s
+        `_PipelineComponent`-catalog.
+        """
         return self._stage_catalog.copy()
 
     @property
     def stages(self) -> list[str]:
-        """Returns a copy of the `Pipeline`'s list of `Stage`s."""
+        """
+        Returns a copy of the `Pipeline`'s list of
+        `_PipelineComponent`s.
+        """
         return self._pipeline.copy()
 
     def run(self, **kwargs) -> PipelineOutput:
@@ -157,7 +168,8 @@ class Pipeline:
         Trigger `Pipeline` execution.
 
         Keyword arguments:
-        kwargs -- keyword arguments that are forwarded into `Stage`s
+        kwargs -- keyword arguments that are forwarded into
+                  `_PipelineComponent`s
         """
 
         self._validate_external_kwargs(**kwargs)
@@ -177,13 +189,14 @@ class Pipeline:
                 s = self._stage_catalog[_s]
             except KeyError as exc:
                 raise PipelineError(
-                    f"Unable to resolve reference to Stage id '{_s}' in Pipeline with " \
+                    f"Unable to resolve reference to Component id '{_s}' in Pipeline with " \
                     + f"stages {self._pipeline}. Records until error: {records}"
                 ) from exc
             if isinstance(s, Fork):
                 # ##########
                 # Fork
                 # get StageRef
+                assert isinstance(s, Fork)
                 stage_ref = s.eval(
                     PipelineContext(
                         self._pipeline, index, self._loop, records, kwargs,
@@ -204,15 +217,15 @@ class Pipeline:
             # ##########
             # Stage
             # requires
-            if s.requires is not None:
-                if not self._meets_requirements(
-                    _s, PipelineContext(
-                        self._pipeline, index, self._loop, records, kwargs,
-                        data, stage_count
-                    )
-                ):
-                    index = index + 1
-                    continue
+            assert isinstance(s, Stage)
+            if not self._meets_requirements(
+                _s, PipelineContext(
+                    self._pipeline, index, self._loop, records, kwargs,
+                    data, stage_count
+                )
+            ):
+                index = index + 1
+                continue
             # all requirements met
             stage_count = stage_count + 1
             # primer
@@ -294,7 +307,7 @@ class Pipeline:
             return wrapped
         return decorator
 
-    def append(self, element: "str | Stage | Fork | Pipeline") -> None:
+    def append(self, element: "str | _PipelineComponent | Pipeline") -> None:
         """Append `element` to the `Pipeline`."""
         if isinstance(element, Pipeline):
             self._update_catalog(**element.catalog)
@@ -303,7 +316,7 @@ class Pipeline:
         self._update_catalog(element)
         self._pipeline.append(str(element))
 
-    def prepend(self, element: "str | Stage | Fork | Pipeline") -> None:
+    def prepend(self, element: "str | _PipelineComponent | Pipeline") -> None:
         """Prepend `element` to the `Pipeline`."""
         if isinstance(element, Pipeline):
             self._update_catalog(**element.catalog)
@@ -315,7 +328,7 @@ class Pipeline:
     def insert(
         self,
         index: int,
-        element: "str | Stage | Fork | Pipeline"
+        element: "str | _PipelineComponent | Pipeline"
     ) -> None:
         """Insert `element` into the `Pipeline` at `index`."""
         if isinstance(element, Pipeline):
@@ -328,10 +341,11 @@ class Pipeline:
         self._pipeline.insert(index, str(element))
 
     def __add__(self, other):
-        if not isinstance(other, Stage) and not isinstance(other, Pipeline):
+        if not isinstance(other, _PipelineComponent) \
+                and not isinstance(other, Pipeline):
             raise TypeError(
-                "Incompatible type, expected 'Stage' or 'Pipeline' "
-                    f"not '{type(other).__name__}'."
+                "Incompatible type, expected '_PipelineComponent' or 'Pipeline'"
+                    f" not '{type(other).__name__}'."
             )
         self.append(other)
         return self
@@ -347,7 +361,7 @@ class Pipeline:
     def __getitem__(self, key):
         return self._stage_catalog[key]
 
-    def __iter__(self) -> Iterator[Stage | Fork]:
+    def __iter__(self) -> Iterator[_PipelineComponent]:
         for s in self._pipeline:
             yield self._stage_catalog[s]
 

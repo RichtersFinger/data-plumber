@@ -6,13 +6,13 @@ in a `Pipeline.run`.
 """
 
 from typing import Callable, Optional
-from uuid import uuid4
 
+from .component import _PipelineComponent
 from .context import PipelineContext
 from .ref import StageRef, StageById, StageByIncrement
 
 
-class Fork:
+class Fork(_PipelineComponent):
     """
     A `Fork` can be inserted into a `Pipeline` to control flow/execution
     order of a `Pipeline.run(...)`-command. This class is not indended
@@ -49,12 +49,7 @@ class Fork:
         fork: Callable[..., Optional[StageRef | str | int]]
     ) -> None:
         self._fork = fork
-        self._id = str(uuid4())
-
-    @property
-    def id(self) -> str:
-        """Returns a `Stage`'s `id`."""
-        return self._id
+        super().__init__()
 
     def eval(self, context: PipelineContext) -> Optional[StageRef]:
         """
@@ -76,6 +71,3 @@ class Fork:
             return StageByIncrement(result)
         # otherwise it is either a StageRef already or None
         return result
-
-    def __str__(self):
-        return self._id

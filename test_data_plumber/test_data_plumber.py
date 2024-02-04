@@ -3,6 +3,7 @@ Test suite for data-plumber.
 
 Run with
 pytest -v -s --cov=data_plumber.array \
+    --cov=data_plumber.component \
     --cov=data_plumber.context \
     --cov=data_plumber.error \
     --cov=data_plumber.fork \
@@ -824,6 +825,18 @@ def test_pipeline_fork_minimal():
 
     assert len(output.records) == 4
     assert output.data["test"] == 0
+
+
+def test_pipeline_fork_id():
+    """
+    Test property `id` of class `Fork` and its use in a `Pipeline.
+    """
+
+    f = Fork(
+        lambda **kwargs: None
+    )
+    assert isinstance(f.id, str)
+    assert f.id in Pipeline(f)
 
 
 def test_pipeline_fork_kwargs():
