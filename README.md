@@ -8,6 +8,12 @@ enable more complex (i.e. non-linear) orders of execution. Pipelines can also
 be collected into arrays that can be executed at once with the same input
 data.
 
+## Contents
+1. [Minimal Exampe](#minimal-usage-example)
+1. [Install](#install)
+1. [Documentation](#documentation)
+1. [Changelog](CHANGELOG.md)
+
 ## Minimal usage example
 Consider a scenario where the contents of a dictionary have to be validated
 and a suitable error message has to be generated. Specifically, a valid input-
@@ -44,3 +50,15 @@ a list of integer numbers. A suitable pipeline might look like this
 >>> pipeline.run(**{"data": [1, 2, 3]}).stages
 [('', 0), ('', 0), ('validation success', 0)]
 ```
+
+## Install
+Install using `pip` with
+```
+pip install data-plumber
+```
+Consider installing in a virtual environment.
+
+## Documentation
+
+* [Stage](docs/stage.md)
+* [Pipeline](docs/pipeline.md)

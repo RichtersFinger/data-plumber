@@ -1,12 +1,40 @@
 from pathlib import Path
 from setuptools import setup
 
-# read contents of README
+# prepare contents of long_description
+docs_title = "\n## Documentation\n"
+docs_dir = "docs"
+docs_ref = "[Documentation](../README.md#documentation)"
+docs_ref_replacement = "[Back](#documentation)"
 long_description = \
-    (Path(__file__).parent / "README.md").read_text(encoding="utf8")
+    (Path(__file__).parent / "README.md") \
+        .read_text(encoding="utf8") \
+        .split(docs_title)[0] + docs_title
+# read documentation and append to long_description
+docs_files = [
+    {"file": "overview.md", "ref": "overview", "title": "Overview", "value": ""},
+    {"file": "stage.md", "ref": "stage", "title": "Stage", "value": ""},
+    {"file": "pipeline.md", "ref": "pipeline", "title": "Pipeline", "value": ""},
+]
+for doc in docs_files:
+    doc["value"] = \
+        (Path(__file__).parent / docs_dir / doc["file"]) \
+            .read_text(encoding="utf8") \
+            .replace(docs_ref, docs_ref_replacement)
+# build into long_description
+long_description = long_description \
+    + "\n" + "\n".join(
+        f"* [{d['title']}](#{d['ref']})" for d in docs_files
+    ) \
+    + "\n\n" + "\n".join(d["value"] for d in docs_files)
+
 # read contents of CHANGELOG
 changelog = \
     (Path(__file__).parent / "CHANGELOG.md").read_text(encoding="utf8")
+long_description = \
+    long_description.replace(
+        "[Changelog](CHANGELOG.md)", "[Changelog](#changelog)"
+    ) + "\n\n" + changelog
 
 # read contents of requirements.txt
 requirements = \
@@ -19,7 +47,7 @@ setup(
     version="1.8.0",
     name="data-plumber",
     description="lightweight but versatile python-framework for multi-stage information processing",
-    long_description=long_description + "\n\n" + changelog,
+    long_description=long_description,
     long_description_content_type="text/markdown",
     author="Steffen Richters-Finger",
     author_email="srichters@uni-muenster.de",
