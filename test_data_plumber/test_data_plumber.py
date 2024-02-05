@@ -1175,6 +1175,35 @@ def test_fork_exception():
         ).run()
 
 
+@pytest.mark.parametrize(
+    ("status", "expectation"),
+    [
+        (0, 2),
+        (1, 1)
+    ],
+)
+def test_pipeline_fork_stagerecord_argument(status, expectation):
+    """
+    Test class `last_record`-argument passed to `Fork` with method `run`
+    of class `Pipeline` for minimal setup.
+    """
+
+    output = Pipeline(
+        "a", "f", "b",
+        a=Stage(
+            status=lambda **kwargs: status
+        ),
+        f=Fork(
+            lambda records, **kwargs: Next if records[-1].status == 0 else None
+        ),
+        b=Stage(
+            status=lambda **kwargs: 2
+        ),
+    ).run()
+
+    assert output.last_status == expectation
+
+
 # #############################
 # ### Pipearray
 

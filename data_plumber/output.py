@@ -5,12 +5,12 @@ This module defines the output-format `PipelineOutput` of a
 `Pipeline.run`.
 """
 
-from typing import TypeAlias, Any, Optional
+from typing import Any, Optional
 from dataclasses import dataclass
 
 
 @dataclass
-class _StageRecord:
+class StageRecord:
     """
     Record of a `Stage`'s execution result.
 
@@ -25,16 +25,32 @@ class _StageRecord:
     message: str
     status: int
 
-    def prune(self) -> "StageRecord":
-        """
-        Returns pruned `_StageRecord` containing only message and
-        status.
-        """
-        return (self.message, self.status)
+    # keep legacy support (where a StageRecord was an alias for a two-tuple)
+    def __getitem__(self, index):
+        if index == 0:
+            return self.message
+        if index == 1:
+            return self.status
+        if index == 2:
+            return self.index
+        if index == 3:
+            return self.id_
+        raise IndexError(f"Bad index '{index}' in StageRecord.")
 
+    def __eq__(self, other):
+        if isinstance(other, tuple) and len(other) == 2:
+            return (self.message, self.status) == other
+        if isinstance(other, StageRecord):
+            return \
+                self.index == other.index \
+                and self.id_ == other.id_ \
+                and self.message == other.message \
+                and self.status == other.status
+        return False
 
-StageRecord: TypeAlias = tuple[str, int]
-"""Tuple of message and status from a `Stage`'s-evaluation."""
+    def __iter__(self):
+        for s in (self.message, self.status):
+            yield s
 
 
 @dataclass

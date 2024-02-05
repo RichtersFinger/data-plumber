@@ -8,7 +8,7 @@ in a `Pipeline.run` (internal use).
 from typing import Any
 from dataclasses import dataclass
 
-from .output import _StageRecord
+from .output import StageRecord
 
 
 @dataclass
@@ -23,7 +23,7 @@ class PipelineContext:
               `Fork`s)
     current_position -- index of current position in stages
     loop -- `loop`-property of `Pipeline`
-    records -- list of previous `_StageRecord`s for the current
+    records -- list of previous `StageRecord`s for the current
                `Pipeline.run`
     kwargs -- kwargs passed to `Pipeline.run`
     out -- persistent data-object passed through a `Pipeline`
@@ -33,7 +33,7 @@ class PipelineContext:
     stages: list[str]
     current_position: int
     loop: bool
-    records: list[_StageRecord]
+    records: list[StageRecord]
     kwargs: dict[str, Any]
     out: Any
     count: int

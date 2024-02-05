@@ -12,7 +12,7 @@ from uuid import uuid4
 from .component import _PipelineComponent
 from .context import PipelineContext
 from .error import PipelineError
-from .output import _StageRecord, PipelineOutput
+from .output import StageRecord, PipelineOutput
 from .fork import Fork
 from .stage import Stage
 
@@ -139,7 +139,7 @@ class Pipeline:
         return index
 
     def _validate_external_kwargs(self, **kwargs):
-        reserved_words = ["out", "primer", "status", "count"]
+        reserved_words = ["out", "primer", "status", "count", "records"]
         # check for reserved kwargs
         if (bad_kwarg := next(
             (p for p in kwargs if p in reserved_words),
@@ -182,7 +182,7 @@ class Pipeline:
 
         self._validate_external_kwargs(**kwargs)
 
-        records: list[_StageRecord] = []  # record of results
+        records: list[StageRecord] = []  # record of results
         data = self._initialize_output()  # output data
 
         stage_count = -1
@@ -267,7 +267,7 @@ class Pipeline:
                 count=stage_count,
                 status=status
             )
-            records.append(_StageRecord(index, _s, msg, status))
+            records.append(StageRecord(index, _s, msg, status))
             if self._exit_on_status(status):
                 break
             index = index + 1
@@ -275,7 +275,7 @@ class Pipeline:
         if self._finalize_output is not None:
             self._finalize_output(data=data, **kwargs)
         return PipelineOutput(
-            [r.prune() for r in records],  # prune `_StageRecord`s
+            records,
             kwargs,
             data
         )

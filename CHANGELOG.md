@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0] - 2024-02-05
+
+### Changed
+
+- added a list of previous `StageRecord`s as kwarg for the call to a `Fork`'s conditional (`2f1cb77`)
+- changed `StageRecord` into a proper dataclass (`e7eae6d`)
+
 ## [1.11.0] - 2024-02-04
 
 ### Changed

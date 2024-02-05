@@ -48,7 +48,7 @@ requirements = \
         .split("\n")
 
 setup(
-    version="1.11.0",
+    version="1.12.0",
     name="data-plumber",
     description="lightweight but versatile python-framework for multi-stage information processing",
     long_description=long_description,
@@ -61,7 +61,7 @@ setup(
     project_urls={
         "Source": "https://github.com/RichtersFinger/data-plumber"
     },
-    python_requires=">=3.10, <4",
+    python_requires=">=3.10",
     install_requires=requirements,
     packages=[
         "data_plumber",
@@ -72,4 +72,14 @@ setup(
         ],
     },
     include_package_data=True,
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "Topic :: Software Development :: Libraries",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+    ],
 )

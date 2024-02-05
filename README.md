@@ -1,4 +1,5 @@
-![Tests](https://github.com/RichtersFinger/data-plumber/actions/workflows/tests.yml/badge.svg?branch=main)
+![Tests](https://github.com/RichtersFinger/data-plumber/actions/workflows/tests.yml/badge.svg?branch=main) ![PyPI version](https://badge.fury.io/py/data-plumber.svg) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/data-plumber) ![PyPI - Wheel](https://img.shields.io/pypi/wheel/data-plumber)
+
 
 # data-plumber
 `data-plumber` is a lightweight but versatile python-framework for multi-stage

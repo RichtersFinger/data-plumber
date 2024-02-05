@@ -75,7 +75,7 @@ A `Pipeline` can be triggered by calling the `run`-method.
 >>> Pipeline(...).run(...)
 PipelineOutput(...)
 ```
-Any kwargs passed to this function are forwarded to its `PipelineComponent`'s `Callable`s. Note that some keywords are reserved (`out`, `primer`, `status`, and `count`).
+Any kwargs passed to this function are forwarded to its `PipelineComponent`'s `Callable`s. Note that some keywords are reserved (`out`, `primer`, `status`, `count`, and `records`).
 
 While `Fork`s are simply evaluated and their returned `StageRef` is used to find the next target for execution, `Stage`s have themselves multiple sub-stages. First, the `Pipeline` checks the `Stage`'s requirements, then executions its `primer` before running the `action`-command. Next, any exported kwargs are updated in the `Pipeline.run` and, finally, the status and response message is generated (see `Stage` for details).
 
