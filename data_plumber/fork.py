@@ -61,7 +61,10 @@ class Fork(_PipelineComponent):
         """
 
         result = self._fork(
-            **context.kwargs, out=context.out, count=context.count
+            **context.kwargs,
+            out=context.out,
+            count=context.count,
+            records=context.records
         )
 
         # replace int or string by corresponding StageRef.
