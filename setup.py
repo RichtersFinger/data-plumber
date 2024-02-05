@@ -61,7 +61,7 @@ setup(
     project_urls={
         "Source": "https://github.com/RichtersFinger/data-plumber"
     },
-    python_requires=">=3.10, <4",
+    python_requires=">=3.10",
     install_requires=requirements,
     packages=[
         "data_plumber",
