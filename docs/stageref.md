@@ -2,12 +2,12 @@
 
 [Documentation](../README.md#documentation)
 
-`StageRef`s can be utilized in the context of requirements of `Stage`s as well as flow control with `Fork`s.
+`StageRef`s can be utilized to formulate requirements for `Stage`s as well as flow control with `Fork`s.
 While additional types of `StageRef`s can be defined, `data_plumber` already provides rich possibilities natively.
 
 There are two different categories of `StageRef`s:
-1. referring to records of previously executed `PipelineComponents` (a record then provides information on the components position in the `Pipeline`'s sequence of components)
-1. referring to a component within the list of registered components of a `Pipeline`
+1. referring to records of previously executed `PipelineComponents` (a record can uniquely identify a component within the `Pipeline`'s sequence of components)
+1. referring to a component within the list of registered components of a `Pipeline` directly
 
 #### List of predefined StageRefs (by record)
 * **First**: record of first component
@@ -27,19 +27,19 @@ There are two different categories of `StageRef`s:
 ```
 >>> from data_plumber import Pipeline, Stage, Fork, Previous, NextN
 >>> output = Pipeline(
-        Stage(
-            status=lambda **kwargs: 0
-        ),
-        Stage(
-            requires={Previous: 0},
-            status=lambda count, **kwargs: count
-        ),
-        Fork(
-            lambda count, **kwargs: NextN(1)
-        ),
-        exit_on_status=lambda status: status > 3,
-        loop=True
-    ).run()
+...   Stage(
+...     status=lambda **kwargs: 0
+...   ),
+...   Stage(
+...     requires={Previous: 0},
+...     status=lambda count, **kwargs: count
+...   ),
+...   Fork(
+...     lambda count, **kwargs: NextN(1)
+...   ),
+...   exit_on_status=lambda status: status > 3,
+...   loop=True
+... ).run()
 >>> len(output.records)
 6
 ```

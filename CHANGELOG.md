@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.12.1] - 2024-02-07
+
+### Fixed
+
+- update and fix errors in documentation (`2318210`)
+
 ## [1.12.0] - 2024-02-05
 
 ### Changed

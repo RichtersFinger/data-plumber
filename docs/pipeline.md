@@ -35,29 +35,33 @@ Note that when adding to existing `Pipeline`s, the change is made in-place.
 >>> len(p)
 2
 ```
-Consequently, only properties of the first argument are inherited (refer to python's operator precedence). Therefore, the use of this operation in combination with `Pipeline`s requires caution.
+Consequently, only properties of the first argument are inherited (refer to python's operator precedence).
+Therefore, the use of this operation in combination with `Pipeline`s requires caution.
 
 #### Building named Pipelines
-Instead of simply providing the individual `PipelineComponents` as positional arguments during instantiation, they can be assigned names by providing components as keyword arguments (kwargs). In addition to the kwargs, the positional arguments are still required to determine the order of operations for the `Pipeline`. These are then given by the `PipelineComponent`'s name:
+Instead of simply providing the individual `PipelineComponents` as positional arguments during instantiation, they can be assigned names by providing components as keyword arguments (kwargs).
+In addition to the kwargs, the positional arguments are still required to determine the order of operations for the `Pipeline`.
+These are then given by the `PipelineComponent`'s name:
 ```
 >>> Pipeline(
-    "a", "b", "a", "c",
-    a=Stage(...,),
-    b=Stage(...,),
-    c=Stage(...,)
-)
+...   "a", "b", "a", "c",
+...   a=Stage(...,),
+...   b=Stage(...,),
+...   c=Stage(...,)
+... )
 <data_plumber.pipeline.Pipeline object at ...>
 ```
-In the example above, the `Pipeline` executes the `Stage`s in the order of `a > b > a > c` (note that the names of `Stage`s can occur multiple times in the position arguments or via `Pipeline`-extending methods).
-Methods like `Pipeline.append` also accept string identifiers for `PipelineComponents`. If none are provided at instantiation, an internally generated identifier is used.
+In the example above, the `Pipeline` executes the `Stage`s in the order of `a > b > a > c` (note that the names of `Stage`s can occur multiple times in the positional arguments or via `Pipeline`-extending methods).
+Methods like `Pipeline.append` also accept string identifiers for `PipelineComponents`.
+If none are provided at instantiation, an internally generated identifier is used.
 
 The two approaches of anonymous and named `Pipeline`s can be combined freely:
 ```
 >>> Pipeline(
-    "a", Stage(...,), "a", "c",
-    a=Stage(...,),
-    c=Stage(...,)
-)
+...   "a", Stage(...,), "a", "c",
+...   a=Stage(...,),
+...   c=Stage(...,)
+... )
 <data_plumber.pipeline.Pipeline object at ...>
 ```
 
@@ -75,9 +79,12 @@ A `Pipeline` can be triggered by calling the `run`-method.
 >>> Pipeline(...).run(...)
 PipelineOutput(...)
 ```
-Any kwargs passed to this function are forwarded to its `PipelineComponent`'s `Callable`s. Note that some keywords are reserved (`out`, `primer`, `status`, `count`, and `records`).
+Any kwargs passed to this function are forwarded to its `PipelineComponent`'s `Callable`s.
+Note that some keywords are reserved (`out`, `primer`, `status`, `count`, and `records`).
 
-While `Fork`s are simply evaluated and their returned `StageRef` is used to find the next target for execution, `Stage`s have themselves multiple sub-stages. First, the `Pipeline` checks the `Stage`'s requirements, then executions its `primer` before running the `action`-command. Next, any exported kwargs are updated in the `Pipeline.run` and, finally, the status and response message is generated (see `Stage` for details).
+While `Fork`s are simply evaluated and their returned `StageRef` is used to find the next target for execution, `Stage`s have themselves multiple sub-stages.
+First, the `Pipeline` checks the `Stage`'s requirements, then executions its `primer` before running the `action`-command.
+Next, any `export`ed kwargs are updated in the `Pipeline.run` and, finally, the `status` and `response` message is generated (see `Stage` for details).
 
 #### Pipeline settings
 A `Pipeline` can be configured with multiple properties at instantiation:
@@ -87,9 +94,10 @@ A `Pipeline` can be configured with multiple properties at instantiation:
 * **loop**: boolean; if `False`, the `Pipeline` stops automatically after iterating beyond the last `PipelineComponent` in its list of operations; if `True`, the execution loops back into the first component
 
 #### Running a Pipeline as decorator
-A `Pipeline` can be used to generate kwargs for a function (i.e., based on the persistent data-object). This requires the data-object being unpackable like a mapping (e.g. a dictionary).
+A `Pipeline` can be used to generate kwargs for a function (i.e., based on the content of the persistent data-object).
+This requires the data-object being unpackable like a mapping (e.g. a dictionary).
 ```
 >>> @Pipeline(...).run_for_kwargs(...)
-    def function(arg1, arg2): ...
+... def function(arg1, arg2): ...
 ```
 Arguments that are passed to a call of the decorated function take priority over those generated by the `Pipeline.run`.
