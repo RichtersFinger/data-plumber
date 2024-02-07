@@ -19,6 +19,7 @@ docs_files = [
     {"file": "stageref.md", "ref": "stageref", "title": "StageRef", "value": ""},
     {"file": "output.md", "ref": "pipelineoutput", "title": "PipelineOutput", "value": ""},
     {"file": "array.md", "ref": "pipearray", "title": "Pipearray", "value": ""},
+    {"file": "examples.md", "ref": "examples", "title": "Examples", "value": ""},
 ]
 for doc in docs_files:
     doc["value"] = \

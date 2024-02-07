@@ -3,7 +3,8 @@
 [Documentation](../README.md#documentation)
 
 #### List of properties
-The output of a `Pipeline.run` is an object of type `PipelineOutput`. This object has the following properties:
+The output of a `Pipeline.run` is an object of type `PipelineOutput`.
+This object has the following properties:
 * **records**: a list of `StageRecord`s corresponding to all `Stage`s executed by the `Pipeline`; `StageRecord`s themselves are a collection of properties
   * `index`: index position in `Pipeline`'s sequence of `PipelineComponents`
   * `id_`: name/id of `Stage`
