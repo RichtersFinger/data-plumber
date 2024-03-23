@@ -567,6 +567,40 @@ def test_pipeline_unpacking_mapping():
 
 
 # #############################
+# ### empty PipelineComponent
+
+def test_pipeline_empty_component():
+    """
+    Test empty `PipelineComponent` behavior in `Pipeline.run`.
+    """
+
+    output = Pipeline(
+        Stage(),
+        "empty_component"
+    ).run()
+
+    assert len(output.records) == 1
+
+
+def test_pipeline_fork_empty_component():
+    """
+    Test returning string-id of empty `PipelineComponent` from `Fork`-
+    conditional in `Pipeline.run`.
+    """
+
+    output = Pipeline(
+        Fork(
+            lambda **kwargs: "fork_target"
+        ),
+        Stage(),
+        "fork_target",
+        Stage()
+    ).run()
+
+    assert len(output.records) == 1
+
+
+# #############################
 # ### Pipeline/Stage.addition
 
 def test_stage_addition():
@@ -902,19 +936,6 @@ def test_pipeline_named_stages_execution_order():
     ).run()
 
     assert output.data == ["a", "b", "a"]
-
-
-def test_pipeline_named_stages_exception():
-    """
-    Test exception-behavior in method `run` of class `Pipeline` for
-    named `Stage`s.
-    """
-
-    with pytest.raises(PipelineError):
-        Pipeline(
-            "a", "b",
-            a=Stage(),
-        ).run()
 
 
 # #############################

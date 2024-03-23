@@ -195,14 +195,13 @@ class Pipeline:
             _s = self._pipeline[index]
             try:
                 s = self._stage_catalog[_s]
-            except KeyError as exc:
-                raise PipelineError(
-                    f"Unable to resolve reference to Component id '{_s}' in Pipeline with " \
-                    + f"stages {self._pipeline}. Records until error: {records}"
-                ) from exc
+            except KeyError:
+                # empty component
+                index = index + 1
+                continue
+            # ##########
+            # Fork
             if isinstance(s, Fork):
-                # ##########
-                # Fork
                 # get StageRef
                 assert isinstance(s, Fork)
                 stage_ref = s.eval(
@@ -224,8 +223,8 @@ class Pipeline:
                 continue
             # ##########
             # Stage
-            # requires
             assert isinstance(s, Stage)
+            # requires
             if not self._meets_requirements(
                 _s, PipelineContext(
                     self._pipeline, index, self._loop, records, kwargs,

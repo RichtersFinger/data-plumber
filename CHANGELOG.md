@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.13.0] - 2024-03-23
+
+### Changed
+
+- `Pipeline` now supports empty `PipelineComponent`s as labels within pipeline (`631bc3d`)
+
 ## [1.12.1] - 2024-02-07
 
 ### Fixed

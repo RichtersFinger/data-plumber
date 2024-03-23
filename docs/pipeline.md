@@ -39,7 +39,7 @@ Consequently, only properties of the first argument are inherited (refer to pyth
 Therefore, the use of this operation in combination with `Pipeline`s requires caution.
 
 #### Building named Pipelines
-Instead of simply providing the individual `PipelineComponents` as positional arguments during instantiation, they can be assigned names by providing components as keyword arguments (kwargs).
+Instead of giving the individual `PipelineComponents` as positional arguments during instantiation, they can be assigned names by providing components as keyword arguments (kwargs).
 In addition to the kwargs, the positional arguments are still required to determine the order of operations for the `Pipeline`.
 These are then given by the `PipelineComponent`'s name:
 ```
@@ -64,6 +64,24 @@ The two approaches of anonymous and named `Pipeline`s can be combined freely:
 ... )
 <data_plumber.pipeline.Pipeline object at ...>
 ```
+
+Also note that empty `PipelineComponent` can be used as well.
+This can be helpful to label certain points in a `Pipeline` without changing its behavior.
+Consider for example a `Fork` needs to point to a specific part of a `Pipeline` but otherwise no named `PipelineComponent` are required:
+```
+>>> Pipeline(
+...   Stage(...,),  # stage 1
+...   Fork(
+...     lambda **kwargs: "target_position"
+...   ),
+...   Stage(...,),  # stage 2
+...   "target_position",
+...   Stage(...,)   # stage 3,
+...   ...
+... )
+<data_plumber.pipeline.Pipeline object at ...>
+```
+which when triggered executes the `Stage`s as 'stage 1' > 'stage 3' (the associated `PipelineOutput` does not contain any record of the empty component `"target_position"`).
 
 #### Unpacking Pipelines
 `Pipeline`s support unpacking to be used as, for example, positional or keyword arguments in the constructor of another `Pipeline`:
