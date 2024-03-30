@@ -1,4 +1,4 @@
-![Tests](https://github.com/RichtersFinger/data-plumber/actions/workflows/tests.yml/badge.svg?branch=main) ![PyPI version](https://badge.fury.io/py/data-plumber.svg) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/data-plumber) ![PyPI - Wheel](https://img.shields.io/pypi/wheel/data-plumber)
+ ![Tests](https://github.com/RichtersFinger/data-plumber/actions/workflows/tests.yml/badge.svg?branch=main) ![PyPI - License](https://img.shields.io/pypi/l/data-plumber) ![GitHub top language](https://img.shields.io/github/languages/top/RichtersFinger/data-plumber) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/data-plumber) ![PyPI version](https://badge.fury.io/py/data-plumber.svg) ![PyPI - Wheel](https://img.shields.io/pypi/wheel/data-plumber) 
 
 
 # data-plumber

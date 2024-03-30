@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.0] - 2024-03-30
+
+### Added
+
+- added `finalize_output`-override option to `Pipeline.run` (`e951f97`)
+
 ## [1.13.0] - 2024-03-23
 
 ### Changed

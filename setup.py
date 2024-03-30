@@ -47,9 +47,14 @@ requirements = \
         .read_text(encoding="utf8") \
         .strip() \
         .split("\n")
+test_requirements = \
+    (Path(__file__).parent / "test_data_plumber" / "test_requirements.txt") \
+        .read_text(encoding="utf8") \
+        .strip() \
+        .split("\n")
 
 setup(
-    version="1.13.0",
+    version="1.14.0",
     name="data-plumber",
     description="lightweight but versatile python-framework for multi-stage information processing",
     long_description=long_description,
@@ -64,6 +69,9 @@ setup(
     },
     python_requires=">=3.10",
     install_requires=requirements,
+    extras_require={
+        'tests': test_requirements
+    },
     packages=[
         "data_plumber",
     ],
