@@ -171,11 +171,16 @@ class Pipeline:
         """
         return self._pipeline.copy()
 
-    def run(self, **kwargs) -> PipelineOutput:
+    def run(
+        self, finalize_output: Optional[Callable[..., Any]] = None, **kwargs
+    ) -> PipelineOutput:
         """
         Trigger `Pipeline` execution.
 
         Keyword arguments:
+        finalize_output -- callable that overrides the `Pipeline`'s
+                           `finalize_output` (given at instantiation)
+                           (default `None`)
         kwargs -- keyword arguments that are forwarded into
                   `_PipelineComponent`s
         """
@@ -271,7 +276,9 @@ class Pipeline:
                 break
             index = index + 1
 
-        if self._finalize_output is not None:
+        if finalize_output is not None:
+            finalize_output(data=data, **kwargs)
+        elif self._finalize_output is not None:
             self._finalize_output(data=data, **kwargs)
         return PipelineOutput(
             records,

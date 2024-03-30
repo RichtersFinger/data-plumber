@@ -282,6 +282,25 @@ def test_pipeline_run_finalize_output():
     assert output.data["finalizer"] == "finalizer"
 
 
+def test_pipeline_run_finalize_output_override():
+    """
+    Test `Pipeline`-property `finalize_output` with method `run`.
+    """
+
+    output = Pipeline(
+        Stage(),
+        finalize_output=lambda data, **kwargs: data.update(kwargs)
+    ).run(
+        finalizer="finalizer",
+        finalize_output=lambda data, **kwargs:
+            data.update({"finalizer-override": True})
+    )
+
+    assert "finalizer" not in output.data
+    assert "finalizer-override" in output.data
+    assert output.data["finalizer-override"]
+
+
 # #############################
 # ### Pipeline.exit_on_status
 
