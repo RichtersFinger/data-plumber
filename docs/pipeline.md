@@ -97,6 +97,7 @@ A `Pipeline` can be triggered by calling the `run`-method.
 >>> Pipeline(...).run(...)
 PipelineOutput(...)
 ```
+Passing the `finalize_output` keyword argument into a `run` allows to modify the persistent `Pipeline`-data at exit (see section [Pipeline settings](#pipeline-settings) for details).
 Any kwargs passed to this function are forwarded to its `PipelineComponent`'s `Callable`s.
 Note that some keywords are reserved (`out`, `primer`, `status`, `count`, and `records`).
 
@@ -107,7 +108,7 @@ Next, any `export`ed kwargs are updated in the `Pipeline.run` and, finally, the 
 #### Pipeline settings
 A `Pipeline` can be configured with multiple properties at instantiation:
 * **initialize_output**: a `Callable` that returns an object which is consequently passed forward into the `PipelineComponent`'s `Callable`s; this object is refered to as "persistent data-object" (default generates an empty dictionary)
-* **finalize_output**: a `Callable` that is called before (normally) exiting the `Pipeline.run` with the `run`'s kwargs as well as the persistent data-object
+* **finalize_output**: a `Callable` that is called before (normally) exiting the `Pipeline.run` with the `run`'s kwargs as well as the persistent data-object (can be overridden in call of `Pipeline.run`)
 * **exit_on_status**: either integer value (`Pipeline` exists normally if any component returns this status) or a `Callable` that is called after any component with the component's status (if it evaluates to `True`, the `Pipeline.run` is stopped)
 * **loop**: boolean; if `False`, the `Pipeline` stops automatically after iterating beyond the last `PipelineComponent` in its list of operations; if `True`, the execution loops back into the first component
 
