@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.15.0] - 2024-04-16
+
+### Changed
+
+- changed `finalize_output`-callable argument signature, it now also takes `records` (`16623d9`)
+
 ## [1.14.0] - 2024-03-30
 
 ### Added
