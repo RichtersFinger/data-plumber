@@ -301,6 +301,52 @@ def test_pipeline_run_finalize_output_override():
     assert output.data["finalizer-override"]
 
 
+@pytest.mark.parametrize(
+    ("status", "expected_out"),
+    [
+        (0, {"status": 0}),
+        (1, {}),
+    ]
+)
+def test_pipeline_run_finalize_output_records(status, expected_out):
+    """
+    Test `Pipeline`-property `finalize_output` using `records`-
+    information.
+    """
+
+    output = Pipeline(
+        Stage(status=lambda **kwargs: status),
+        finalize_output=lambda data, records, **kwargs:
+            data.update({"status": 0}) if records[-1].status == 0 else None
+    ).run()
+
+    assert output.data == expected_out
+
+
+@pytest.mark.parametrize(
+    ("status", "expected_out"),
+    [
+        (0, {"status": 0}),
+        (1, {}),
+    ]
+)
+def test_pipeline_run_finalize_output_records_run(status, expected_out):
+    """
+    Test `Pipeline`-property `finalize_output` using `records`-
+    information (repeat previous test `..._finalize_output_records `but
+    for run-specific `finalize_output`).
+    """
+
+    output = Pipeline(
+        Stage(status=lambda **kwargs: status),
+    ).run(
+        finalize_output=lambda data, records, **kwargs:
+            data.update({"status": 0}) if records[-1].status == 0 else None
+    )
+
+    assert output.data == expected_out
+
+
 # #############################
 # ### Pipeline.exit_on_status
 

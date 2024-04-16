@@ -54,7 +54,7 @@ test_requirements = \
         .split("\n")
 
 setup(
-    version="1.14.0",
+    version="1.15.0",
     name="data-plumber",
     description="lightweight but versatile python-framework for multi-stage information processing",
     long_description=long_description,
