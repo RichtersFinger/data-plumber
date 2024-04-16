@@ -48,9 +48,9 @@ class Pipeline:
                          (default lambda: {})
     finalize_output -- `Callable` that is executed after the execution
                        of `Pipeline.run` exits; gets passed the
-                       `Pipeline`'s persistent `data`-object and `run`'s
-                       kwargs (see also docs of individual
-                       `_PipelineComponent`s)
+                       `Pipeline`'s persistent `data`-object, a list of
+                       previous `StageRecords`, and `run`'s kwargs (see
+                       also docs of individual `_PipelineComponent`s)
                        (default None)
     exit_on_status -- stop `Pipeline` execution if
                       * any `Stage` returns this status (int)
@@ -179,7 +179,7 @@ class Pipeline:
 
         Keyword arguments:
         finalize_output -- callable that overrides the `Pipeline`'s
-                           `finalize_output` (given at instantiation)
+                           `finalize_output` (constructor-argument)
                            (default `None`)
         kwargs -- keyword arguments that are forwarded into
                   `_PipelineComponent`s
@@ -277,9 +277,9 @@ class Pipeline:
             index = index + 1
 
         if finalize_output is not None:
-            finalize_output(data=data, **kwargs)
+            finalize_output(data=data, records=records, **kwargs)
         elif self._finalize_output is not None:
-            self._finalize_output(data=data, **kwargs)
+            self._finalize_output(data=data, records=records, **kwargs)
         return PipelineOutput(
             records,
             kwargs,
