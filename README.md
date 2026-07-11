@@ -67,3 +67,15 @@ Consider installing in a virtual environment.
 * [PipelineOutput](docs/output.md)
 * [Pipearray](docs/array.md)
 * [Examples](docs/examples.md)
+
+## Tests
+
+Run tests locally after cloning this repository by entering
+```bash
+# install local package
+pip install .
+# install dependencies
+pip install -r test_data_plumber/test_requirements.txt
+# run
+pytest
+```
