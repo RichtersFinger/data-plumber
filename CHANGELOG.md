@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.15.1] - 2026-07-11
+
+### Fixed
+
+- bumped `pytest` version
+
 ## [1.15.0] - 2024-04-16
 
 ### Changed
