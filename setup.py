@@ -41,18 +41,6 @@ long_description = \
         "[Changelog](CHANGELOG.md)", "[Changelog](#changelog)"
     ) + "\n\n" + changelog
 
-# read contents of requirements.txt
-requirements = \
-    (Path(__file__).parent / "requirements.txt") \
-        .read_text(encoding="utf8") \
-        .strip() \
-        .split("\n")
-test_requirements = \
-    (Path(__file__).parent / "test_data_plumber" / "test_requirements.txt") \
-        .read_text(encoding="utf8") \
-        .strip() \
-        .split("\n")
-
 setup(
     version="1.15.1",
     name="data-plumber",
@@ -68,10 +56,6 @@ setup(
         "Source": "https://github.com/RichtersFinger/data-plumber"
     },
     python_requires=">=3.10",
-    install_requires=requirements,
-    extras_require={
-        'tests': test_requirements
-    },
     packages=[
         "data_plumber",
     ],
