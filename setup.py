@@ -42,7 +42,7 @@ long_description = \
     ) + "\n\n" + changelog
 
 setup(
-    version="1.15.1",
+    version="1.15.2",
     name="data-plumber",
     description="lightweight but versatile python-framework for multi-stage information processing",
     long_description=long_description,
