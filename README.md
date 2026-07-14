@@ -2,7 +2,7 @@
 
 
 # data-plumber
-`data-plumber` is a lightweight but versatile python-framework for multi-stage information processing.
+`data-plumber` is a lightweight/zero-dependency but versatile python-framework for multi-stage information processing.
 It allows to construct processing pipelines from both atomic building blocks and via recombination of existing pipelines.
 Forks enable more complex (i.e. non-linear) orders of execution.
 Pipelines can also be collected into arrays that can be executed at once with the same input data.
@@ -72,10 +72,5 @@ Consider installing in a virtual environment.
 
 Run tests locally after cloning this repository by entering
 ```bash
-# install local package
-pip install .
-# install dependencies
-pip install -r test_data_plumber/test_requirements.txt
-# run
-pytest
+python -m unittest discover test_data_plumber/
 ```
