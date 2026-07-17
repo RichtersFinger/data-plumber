@@ -1,5 +1,7 @@
 SHELL := /bin/bash
 PWD := ${shell pwd}
+UID ?= $(shell id -u)
+GID ?= $(shell id -g)
 
 PYTHON_CONTAINER_NAME := data-plumber-dev
 PYTHON_CONTAINER_START := docker run --rm -t -d \
@@ -7,7 +9,7 @@ PYTHON_CONTAINER_START := docker run --rm -t -d \
 	-w "${PWD}" \
 	-e PYTHONUSERBASE=/tmp/docker-python-base \
 	-e PIP_NO_CACHE_DIR=true \
-	--user ${shell id -u}:${shell id -g} \
+	--user $(UID):$(GID) \
 	--name ${PYTHON_CONTAINER_NAME} \
 	python:3.12.13-alpine@sha256:aa679aa4eed6eb56c1dc6ad3f1b98b7d2d788fd961596779d188fdedad97fb38 \
 	sleep infinity
